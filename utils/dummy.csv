@@ -1,0 +1,6 @@
+Sr.No.,Employee Code,Employee Name,Employee Ph No,Employee email ID,City,Service POC,Service POC Number,Service Business Partner Name,Service Business Partner Address,Direct Sub Channel (CRC/Partner),Direct POC,Direct POC Number,CRC/Partner Address,Retail Sub Channel (GT/MT/AF),Retail POC,Retail POC Number
+1,EMP001,John Doe,9876543210,john.doe@example.com,Mumbai,Anil Sharma,9123456780,ServicePartner1,123 Service St,CRC,Rahul Verma,9988776655,456 CRC Lane,GT,Meena Kumari,9871122334
+2,EMP002,Jane Smith,8765432109,jane.smith@example.com,Delhi,Sunil Joshi,9123456781,ServicePartner2,456 Service Ave,Partner,Alok Singh,9988776656,789 Partner Rd,MT,Rita Patel,9871122335
+3,EMP003,Robert Brown,7654321098,robert.brown@example.com,Bangalore,Pooja Mehta,9123456782,ServicePartner3,789 Service Blvd,CRC,Suresh Gupta,9988776657,123 CRC Lane,AF,Vikram Rao,9871122336
+4,EMP004,Lisa White,6543210987,lisa.white@example.com,Chennai,Deepak Kumar,9123456783,ServicePartner4,321 Service Park,Partner,Ramesh Iyer,9988776658,456 Partner Rd,GT,Neha Sharma,9871122337
+5,EMP005,Michael Green,5432109876,michael.green@example.com,Hyderabad,Ananya Rao,9123456784,ServicePartner5,654 Service Circle,CRC,Ajay Singh,9988776659,789 CRC Lane,MT,Sophia Jain,9871122338
