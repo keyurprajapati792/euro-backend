@@ -19,6 +19,7 @@ export class AuthController {
       const result = await AuthService.sendEmployeeOTP(empId);
       res.json({ success: true, message: "OTP sent", ...result });
     } catch (error) {
+      console.log(error);
       res.status(400).json({ success: false, message: error.message });
     }
   };
@@ -27,13 +28,14 @@ export class AuthController {
   static verifyEmployeeOTP = async (req, res) => {
     try {
       const { empId, code, verificationId } = req.body;
-      const token = await AuthService.verifyEmployeeOTP(
+      const data = await AuthService.verifyEmployeeOTP(
         empId,
         code,
         verificationId
       );
-      res.json({ success: true, token });
+      res.json({ success: true, data });
     } catch (error) {
+      console.log(error);
       res.status(401).json({ success: false, message: error.message });
     }
   };

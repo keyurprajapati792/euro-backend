@@ -7,6 +7,7 @@ import employeeRoutes from "./routes/employee.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import partnerRoutes from "./routes/partner.routes.js";
 import summaryRoutes from "./routes/summary.routes.js";
+import surveyRoutes from "./routes/survey.routes.js";
 import { importCSVData } from "./utils/csvImport.js";
 
 dotenv.config();
@@ -24,6 +25,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/employee", employeeRoutes);
 app.use("/api/partner", partnerRoutes);
 app.use("/api/dashboard", summaryRoutes);
+app.use("/api/survey", surveyRoutes);
 
 // Root Route
 app.get("/", (req, res) => {

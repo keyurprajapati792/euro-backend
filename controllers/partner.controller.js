@@ -73,8 +73,8 @@ export class PartnerController {
 
   static async getByEmpId(req, res, next) {
     try {
-      const { employeeId } = req.params;
-      const partners = await PartnerService.getPartnerByEmpId(employeeId);
+      const { empId } = req.params;
+      const partners = await PartnerService.getPartnerByEmpId(empId);
       if (!partners)
         return res
           .status(404)

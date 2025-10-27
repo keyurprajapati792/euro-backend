@@ -31,7 +31,7 @@ export class PartnerService {
       "firstname lastname employeeId contact"
     );
   }
-  static async getPartnerByEmpId(employeeId) {
-    return await Partner.find(employeeId);
+  static async getPartnerByEmpId(empId) {
+    return await Partner.find({ empId });
   }
 }
