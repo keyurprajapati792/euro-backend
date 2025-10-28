@@ -3,14 +3,14 @@ import { Survey } from "../models/survey.js";
 export class SurveyService {
   // 🟩 Submit a new survey
   static async submitSurvey(data) {
-    const { partnerId, vertical, visitType, responses } = data;
+    const { partnerId, partnerType, visitType, responses } = data;
 
-    if (!partnerId || !vertical || !visitType || !responses) {
+    if (!partnerId || !partnerType || !visitType || !responses) {
       throw new Error("All fields are required");
     }
 
     const updatedSurvey = await Survey.findOneAndUpdate(
-      { partnerId, vertical, visitType },
+      { partnerId, partnerType, visitType },
       {
         $set: { responses },
       },
