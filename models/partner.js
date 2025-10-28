@@ -9,12 +9,12 @@ const partnerSchema = new mongoose.Schema(
     city: { type: String },
     partner_type: {
       type: String,
-      enum: ["service_partner", "direct_sales_partner", "retail_sales_partner"],
+      enum: ["Service Partner", "Direct Sales Partner", "Retail Sales Partner"],
       required: true,
     },
     sub_type: {
       type: String,
-      enum: ["MS", "IR", "CRC", "Partner", "GT", "MT", "AF"],
+      enum: ["CRC", "Partner", "GT", "MT", "AF", ""],
     },
 
     empId: {

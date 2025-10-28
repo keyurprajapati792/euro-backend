@@ -40,8 +40,15 @@ export class EmployeeController {
 
   static async list(req, res, next) {
     try {
-      const employees = await EmployeeService.getEmployees();
-      res.json({ success: true, data: employees });
+      const { page = 1, limit = 10, search } = req.query;
+
+      const data = await EmployeeService.getEmployees(
+        search,
+        Number(page),
+        Number(limit)
+      );
+
+      res.json({ success: true, data });
     } catch (error) {
       next(error);
     }

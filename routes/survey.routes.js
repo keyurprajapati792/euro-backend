@@ -7,5 +7,6 @@ router.post("/", SurveyController.submitSurvey);
 router.get("/", SurveyController.getAllSurveys);
 router.get("/partner/:partnerId", SurveyController.getSurveyByPartner);
 router.delete("/:id", SurveyController.deleteSurvey);
+router.get("/export", SurveyController.exportCSV);
 
 export default router;

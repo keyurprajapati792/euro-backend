@@ -40,18 +40,25 @@ export class PartnerController {
 
   static async list(req, res, next) {
     try {
+      const {
+        page = 1,
+        limit = 10,
+        partner_type,
+        sub_type,
+        search,
+      } = req.query;
+
       const filter = {};
+      if (partner_type) filter.partner_type = partner_type;
+      if (sub_type && sub_type !== "All") filter.sub_type = sub_type;
 
-      if (req.query.partner_type) {
-        filter.partner_type = req.query.partner_type;
-      }
-
-      if (req.query.sub_type && req.query.sub_type !== "All") {
-        filter.sub_type = req.query.sub_type;
-      }
-
-      const partners = await PartnerService.getPartners(filter);
-      res.json({ success: true, data: partners });
+      const data = await PartnerService.getPartners(
+        filter,
+        search,
+        Number(page),
+        Number(limit)
+      );
+      res.json({ success: true, data });
     } catch (error) {
       next(error);
     }

@@ -86,8 +86,33 @@ export class EmployeeService {
   //   return await Employee.findByIdAndDelete(id);
   // }
 
-  static async getEmployees() {
-    return await Employee.find();
+  static async getEmployees(search = "", page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    // 🔍 Build search condition
+    const searchCondition = search
+      ? {
+          $or: [
+            { firstname: { $regex: search, $options: "i" } },
+            { lastname: { $regex: search, $options: "i" } },
+            { empId: { $regex: search, $options: "i" } },
+            { contact: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const [employees, total] = await Promise.all([
+      Employee.find(searchCondition)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 }),
+      Employee.countDocuments(searchCondition),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return { employees, total, totalPages, currentPage: page };
   }
 
   static async getEmployeeById(id) {

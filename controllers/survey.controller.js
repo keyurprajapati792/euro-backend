@@ -1,5 +1,3 @@
-import Partner from "../models/partner.js";
-import { Survey } from "../models/survey.js";
 import { SurveyService } from "../services/servey.service.js";
 
 export class SurveyController {
@@ -21,32 +19,15 @@ export class SurveyController {
   // 🟦 Get all surveys
   static async getAllSurveys(req, res) {
     try {
-      const filter = {};
+      const { partner_type, search, page, limit } = req.query;
+      const result = await SurveyService.getAllSurveys({
+        partner_type,
+        search,
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+      });
 
-      if (req.query.partner_type && req.query.partner_type !== "All") {
-        filter.partnerType = req.query.partner_type;
-      }
-
-      // Add search support
-      const search = req.query.search;
-      let surveysQuery = Survey.find(filter).populate("partnerId");
-
-      if (search) {
-        // Use case-insensitive regex search on partner fields
-        const partners = await Partner.find({
-          $or: [
-            { name: { $regex: search, $options: "i" } },
-            { contactPerson: { $regex: search, $options: "i" } },
-            { phone: { $regex: search, $options: "i" } },
-          ],
-        }).select("_id");
-
-        const partnerIds = partners.map((p) => p._id);
-        surveysQuery = surveysQuery.find({ partnerId: { $in: partnerIds } });
-      }
-
-      const surveys = await surveysQuery;
-      res.json({ success: true, data: surveys });
+      res.json({ success: true, data: result });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
     }
@@ -69,6 +50,24 @@ export class SurveyController {
       const { id } = req.params;
       await SurveyService.deleteSurvey(id);
       res.json({ success: true, message: "Survey deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  static async exportCSV(req, res) {
+    try {
+      const filter = {};
+
+      if (req.query.partner_type && req.query.partner_type !== "All") {
+        filter.partnerType = req.query.partner_type;
+      }
+
+      const csv = await SurveyService.exportSurveysToCSV(filter);
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=surveys.csv");
+      res.status(200).send(csv);
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
     }
