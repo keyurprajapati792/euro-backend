@@ -4,9 +4,11 @@ import Employee from "../models/employee.js";
 import Partner from "../models/partner.js";
 
 /**
- * Parses and imports data from the uploaded CSV.
- * 1️⃣ Creates/updates employees
- * 2️⃣ Creates partners linked to employees
+ * CSV Import Logic (Row-by-Row)
+ * For each row:
+ *   1. Create or update Employee (with hashed password)
+ *   2. Create 0–3 Partner records
+ *   3. Update Employee with partner IDs
  */
 export const importCSVData = async (filePath) => {
   try {
@@ -21,9 +23,6 @@ export const importCSVData = async (filePath) => {
         .on("error", reject);
     });
 
-    const employeeMap = new Map();
-
-    // Step 2: Process Employees
     for (const row of rows) {
       const empCode = row["Employee Code"]?.trim();
       if (!empCode) continue;
@@ -32,44 +31,43 @@ export const importCSVData = async (filePath) => {
       const [firstname, ...lastnameParts] = fullName.split(" ");
       const lastname = lastnameParts.join(" ") || "";
 
-      const employeeData = {
-        empId: empCode,
-        firstname,
-        lastname,
-        email: row["Employee email ID"]?.trim() || "",
-        contact: row["Employee Ph No"]?.trim() || "",
-      };
+      const email = row["Employee email ID"]?.trim() || "";
+      const contact = row["Employee Ph No"]?.trim() || "";
+      const city = row["City"]?.trim();
 
+      //Create/Find Employee
       let employee = await Employee.findOne({ empId: empCode });
+
       if (!employee) {
-        employee = await Employee.create(employeeData);
+        employee = await Employee.create({
+          empId: empCode,
+          firstname,
+          lastname,
+          email,
+          contact,
+        });
       }
 
-      employeeMap.set(empCode, employee._id);
-    }
+      const empId = employee._id;
+      const updateData = {};
 
-    // Step 3: Process Partners
-    for (const row of rows) {
-      const city = row["City"]?.trim();
-      const empCode = row["Employee Code"]?.trim();
-      const employeeId = employeeMap.get(empCode);
-
-      // ---- Service Partner ----
+      //Create Service Partner (if exists)
       if (row["Service Business Partner Name"]) {
-        await Partner.create({
+        const servicePartner = await Partner.create({
           name: row["Service Business Partner Name"].trim(),
           contactPerson: row["Service POC"]?.trim(),
           phone: row["Service POC Number"]?.trim(),
           address: row["Service Business Partner Address"]?.trim(),
           partner_type: "service_partner",
           city,
-          empId: employeeId,
+          empId,
         });
+        updateData.servicePartnerId = servicePartner._id;
       }
 
-      // ---- Direct Sales Partner ----
+      //Create Direct Partner (if exists)
       if (row["Direct Sub Channel (CRC/Partner)"]) {
-        await Partner.create({
+        const directPartner = await Partner.create({
           name: row["Direct Sub Channel (CRC/Partner)"].trim(),
           contactPerson: row["Direct POC"]?.trim(),
           phone: row["Direct POC Number"]?.trim(),
@@ -77,27 +75,36 @@ export const importCSVData = async (filePath) => {
           partner_type: "direct_sales_partner",
           sub_type: row["Direct Sub Channel (CRC/Partner)"]?.trim(),
           city,
-          empId: employeeId,
+          empId,
         });
+        updateData.directPartnerId = directPartner._id;
       }
 
-      // ---- Retail Sales Partner ----
+      //Create Retail Partner (if exists)
       if (row["Retail Sub Channel (GT/MT/AF)"]) {
-        await Partner.create({
+        const retailPartner = await Partner.create({
           name: row["Retail Sub Channel (GT/MT/AF)"].trim(),
           contactPerson: row["Retail POC"]?.trim(),
           phone: row["Retail POC Number"]?.trim(),
           partner_type: "retail_sales_partner",
           sub_type: row["Retail Sub Channel (GT/MT/AF)"]?.trim(),
           city,
-          empId: employeeId,
+          empId,
         });
+        updateData.retailPartnerId = retailPartner._id;
+      }
+
+      //Update Employee with partner IDs
+      if (Object.keys(updateData).length > 0) {
+        await Employee.findByIdAndUpdate(empId, updateData);
       }
     }
 
-    console.log("✅ CSV data imported successfully");
+    console.log(
+      "CSV import completed: Employees + Partners created successfully!"
+    );
   } catch (error) {
-    console.error("❌ Error importing CSV:", error);
+    console.error("Error during CSV import:", error);
     throw error;
   }
 };

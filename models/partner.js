@@ -20,6 +20,7 @@ const partnerSchema = new mongoose.Schema(
     empId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
+      default: null,
     },
   },
   { timestamps: true }

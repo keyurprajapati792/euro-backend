@@ -21,7 +21,7 @@ const surveySchema = new mongoose.Schema(
       ref: "Partner",
       required: true,
     },
-    vertical: {
+    partnerType: {
       type: String,
       enum: ["service_partner", "retail_sales_partner", "direct_sales_partner"],
       required: true,

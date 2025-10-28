@@ -7,6 +7,21 @@ const employeeSchema = new mongoose.Schema(
     email: { type: String, required: true },
     empId: { type: String, required: true, unique: true },
     contact: { type: String },
+    servicePartnerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Partner",
+      default: null,
+    },
+    directPartnerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Partner",
+      default: null,
+    },
+    retailPartnerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Partner",
+      default: null,
+    },
   },
   { timestamps: true }
 );

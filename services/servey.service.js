@@ -9,19 +9,23 @@ export class SurveyService {
       throw new Error("All fields are required");
     }
 
-    const newSurvey = await Survey.create({
-      partnerId,
-      vertical,
-      visitType,
-      responses,
-    });
+    const updatedSurvey = await Survey.findOneAndUpdate(
+      { partnerId, vertical, visitType },
+      {
+        $set: { responses },
+      },
+      {
+        new: true,
+        upsert: true,
+      }
+    );
 
-    return newSurvey;
+    return updatedSurvey;
   }
 
   // 🟦 Get all surveys
-  static async getAllSurveys() {
-    const surveys = await Survey.find().populate("partnerId");
+  static async getAllSurveys(filter = {}) {
+    const surveys = await Survey.find(filter).populate("partnerId");
     return surveys;
   }
 
