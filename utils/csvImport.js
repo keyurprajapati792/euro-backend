@@ -68,7 +68,6 @@ export const importCSVData = async (filePath) => {
       //Create Direct Partner (if exists)
       if (row["Direct Sub Channel (CRC/Partner)"]) {
         const directPartner = await Partner.create({
-          name: row["Direct Sub Channel (CRC/Partner)"].trim(),
           contactPerson: row["Direct POC"]?.trim(),
           phone: row["Direct POC Number"]?.trim(),
           address: row["CRC/Partner Address"]?.trim(),
@@ -83,7 +82,6 @@ export const importCSVData = async (filePath) => {
       //Create Retail Partner (if exists)
       if (row["Retail Sub Channel (GT/MT/AF)"]) {
         const retailPartner = await Partner.create({
-          name: row["Retail Sub Channel (GT/MT/AF)"].trim(),
           contactPerson: row["Retail POC"]?.trim(),
           phone: row["Retail POC Number"]?.trim(),
           partner_type: "retail_sales_partner",
