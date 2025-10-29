@@ -1,25 +1,34 @@
 import { Parser } from "json2csv";
 import Partner from "../models/partner.js";
 import { Survey } from "../models/survey.js";
+import mongoose from "mongoose";
 
 export class SurveyService {
   // 🟩 Submit a new survey
   static async submitSurvey(data) {
-    const { partnerId, partnerType, visitType, responses } = data;
+    if (
+      !data.partnerId ||
+      !data.partnerType ||
+      !data.visitType ||
+      !data.responses
+    ) {
+      throw new Error("All required fields must be provided");
+    }
 
-    if (!partnerId || !partnerType || !visitType || !responses) {
-      throw new Error("All fields are required");
+    // Auto add submittedAt only when final submission
+    if (data.state === "submitted") {
+      data.submittedAt = new Date();
     }
 
     const updatedSurvey = await Survey.findOneAndUpdate(
-      { partnerId, partnerType, visitType },
       {
-        $set: { responses },
+        partnerId: data.partnerId,
+        partnerType: data.partnerType,
+        visitType: data.visitType,
+        customerId: data.customerId,
       },
-      {
-        new: true,
-        upsert: true,
-      }
+      { $set: data },
+      { new: true, upsert: true }
     );
 
     return updatedSurvey;
@@ -27,7 +36,7 @@ export class SurveyService {
 
   // 🟦 Get all surveys
   static async getAllSurveys({ partner_type, search, page = 1, limit = 10 }) {
-    const filter = {};
+    const filter = {state: "submitted"};
     if (partner_type && partner_type !== "All") {
       filter.partnerType = partner_type;
     }
@@ -62,8 +71,15 @@ export class SurveyService {
   }
 
   // 🟨 Get survey by partner ID
-  static async getSurveyByPartner(partnerId) {
-    const surveys = await Survey.find({ partnerId }).populate("partnerId");
+  static async getSurveyByEmployee({ partnerType, empId, partnerId }) {
+    const filter = {
+      partnerType,
+      state: "draft",
+      empId: new mongoose.Types.ObjectId(empId),
+      partnerId: new mongoose.Types.ObjectId(partnerId),
+    };
+
+    const surveys = await Survey.find(filter);
     if (!surveys || surveys.length === 0) {
       throw new Error("No surveys found for this partner");
     }

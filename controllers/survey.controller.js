@@ -34,10 +34,15 @@ export class SurveyController {
   }
 
   // 🟨 Get surveys by partner ID
-  static async getSurveyByPartner(req, res) {
+  static async getSurveyByEmployee(req, res) {
     try {
-      const { partnerId } = req.params;
-      const survey = await SurveyService.getSurveyByPartner(partnerId);
+      const { type, empId, state, partnerId } = req.query;
+      const survey = await SurveyService.getSurveyByEmployee({
+        partnerType: type,
+        empId,
+        partnerId,
+        state,
+      });
       res.json({ success: true, data: survey });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });

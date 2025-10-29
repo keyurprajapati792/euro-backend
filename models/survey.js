@@ -16,6 +16,11 @@ const responseSchema = new mongoose.Schema(
 
 const surveySchema = new mongoose.Schema(
   {
+    empId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      required: true,
+    },
     partnerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Partner",
@@ -23,10 +28,15 @@ const surveySchema = new mongoose.Schema(
     },
     partnerType: {
       type: String,
-      enum: ["service_partner", "retail_sales_partner", "direct_sales_partner"],
+      enum: ["Service Partner", "Retail Sales Partner", "Direct Sales Partner"],
       required: true,
     },
+    customerId: { type: String, required: true },
+    customerName: { type: String, required: true },
+    customerContact: { type: String, required: true },
+    customerEmail: { type: String, required: true },
     visitType: { type: String, required: true },
+    state: { type: String, enum: ["draft", "submitted"] },
     responses: [responseSchema],
     submittedAt: { type: Date, default: Date.now },
   },

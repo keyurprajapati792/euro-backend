@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post("/", SurveyController.submitSurvey);
 router.get("/", SurveyController.getAllSurveys);
-router.get("/partner/:partnerId", SurveyController.getSurveyByPartner);
+router.get("/by-employee", SurveyController.getSurveyByEmployee);
 router.delete("/:id", SurveyController.deleteSurvey);
 router.get("/export", SurveyController.exportCSV);
 

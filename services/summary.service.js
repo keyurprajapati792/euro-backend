@@ -16,7 +16,7 @@ export class SummaryService {
       const retailSalesPartners = await Partner.countDocuments({
         partner_type: "Retail Sales Partner",
       });
-      const surveys = await Survey.countDocuments();
+      const surveys = await Survey.countDocuments({ state: "submitted" });
 
       return {
         employees,

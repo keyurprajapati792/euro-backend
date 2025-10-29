@@ -1,6 +1,9 @@
 import Employee from "../models/employee.js";
 import axios from "axios";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export class AuthService {
   // 🔹 Admin login (hardcoded)
@@ -32,7 +35,7 @@ export class AuthService {
         },
         params: {
           countryCode: 91,
-          customerId: "C-32D9BA56A8BF411",
+          customerId: process.env.CUSTOMER_ID,
           flowType: "SMS",
           mobileNumber: employee.contact,
         },
@@ -65,7 +68,7 @@ export class AuthService {
           countryCode: 91,
           mobileNumber: employee.contact,
           verificationId,
-          customerId: "C-32D9BA56A8BF411",
+          customerId: process.env.CUSTOMER_ID,
           code,
         },
       }
