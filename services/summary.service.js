@@ -8,13 +8,13 @@ export class SummaryService {
     try {
       const employees = await Employee.countDocuments();
       const servicePartners = await Partner.countDocuments({
-        partner_type: "service_partner",
+        partner_type: "Service Partner",
       });
       const directSalesPartners = await Partner.countDocuments({
-        partner_type: "direct_sales_partner",
+        partner_type: "Direct Sales Partner",
       });
       const retailSalesPartners = await Partner.countDocuments({
-        partner_type: "retail_sales_partner",
+        partner_type: "Retail Sales Partner",
       });
       const surveys = await Survey.countDocuments();
 
