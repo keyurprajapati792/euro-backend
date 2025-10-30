@@ -8,22 +8,25 @@ dotenv.config();
 export class AuthService {
   // 🔹 Admin login (hardcoded)
   static adminLogin(email, password) {
-    if (
-      email === process.env.ADMIN_EMAIL &&
-      password === process.env.ADMIN_PASSWORD
-    ) {
-      const token = jwt.sign({ role: "admin", email }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRE,
-      });
-      return token;
+    if (email !== process.env.ADMIN_EMAIL) {
+      throw new Error("Admin email is incorrect");
     }
-    throw new Error("Invalid admin credentials");
+
+    if (password !== process.env.ADMIN_PASSWORD) {
+      throw new Error("Admin password is incorrect");
+    }
+
+    const token = jwt.sign({ role: "admin", email }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRE,
+    });
+
+    return token;
   }
 
-  // 🔹 Send OTP (mocked for now)
+  // 🔹 Send OTP
   static async sendEmployeeOTP(empId) {
     const employee = await Employee.findOne({ empId });
-    if (!employee) throw new Error("Employee not found");
+    if (!employee) throw new Error("Employee with this ID does not exist");
 
     const response = await axios.post(
       "https://cpaas.messagecentral.com/verification/v3/send",
@@ -52,10 +55,12 @@ export class AuthService {
     };
   }
 
-  // 🔹 Verify OTP (mocked, returns employee + token)
+  // 🔹 Verify OTP
   static async verifyEmployeeOTP(empId, code, verificationId) {
     const employee = await Employee.findOne({ empId });
-    if (!employee) throw new Error("Employee not found");
+    if (!employee) throw new Error("Employee with this ID does not exist");
+
+    if (!employee.contact) throw new Error("Employee mobile number not found");
 
     const response = await axios.get(
       "https://cpaas.messagecentral.com/verification/v3/validateOtp",
@@ -75,7 +80,7 @@ export class AuthService {
     );
 
     if (response.status !== 200) {
-      throw new Error("Invalid OTP");
+      throw new Error("Incorrect OTP");
     }
 
     const token = jwt.sign(

@@ -6,13 +6,22 @@ export class SurveyController {
     try {
       const surveyData = req.body;
       const result = await SurveyService.submitSurvey(surveyData);
+
+      const msg =
+        surveyData.state === "draft"
+          ? "Survey saved as draft successfully"
+          : "Survey submitted successfully";
+
       res.json({
         success: true,
-        message: "Survey submitted successfully",
+        message: msg,
         data: result,
       });
     } catch (error) {
-      res.status(400).json({ success: false, message: error.message });
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
     }
   }
 

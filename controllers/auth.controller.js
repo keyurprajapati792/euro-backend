@@ -6,9 +6,16 @@ export class AuthController {
     try {
       const { email, password } = req.body;
       const token = AuthService.adminLogin(email, password);
-      res.json({ success: true, data: token });
+      res.json({
+        success: true,
+        data: token,
+        message: "Admin login successful",
+      });
     } catch (error) {
-      res.status(401).json({ success: false, message: error.message });
+      res.status(401).json({
+        success: false,
+        message: error.message || "Invalid credentials",
+      });
     }
   };
 
@@ -17,10 +24,17 @@ export class AuthController {
     try {
       const { empId } = req.body;
       const result = await AuthService.sendEmployeeOTP(empId);
-      res.json({ success: true, message: "OTP sent", ...result });
+      res.json({
+        success: true,
+        message: "OTP has been sent to your registered mobile number",
+        data: result.data, // only include data structure once
+      });
     } catch (error) {
       console.log(error);
-      res.status(400).json({ success: false, message: error.message });
+      res.status(400).json({
+        success: false,
+        message: error.message || "Unable to send OTP",
+      });
     }
   };
 
@@ -33,10 +47,17 @@ export class AuthController {
         code,
         verificationId
       );
-      res.json({ success: true, data });
+      res.json({
+        success: true,
+        data,
+        message: "OTP verified successfully",
+      });
     } catch (error) {
       console.log(error);
-      res.status(401).json({ success: false, message: error.message });
+      res.status(401).json({
+        success: false,
+        message: error.message || "Invalid OTP or expired",
+      });
     }
   };
 }
