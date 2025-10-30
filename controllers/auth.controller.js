@@ -22,8 +22,8 @@ export class AuthController {
   // Employee send OTP
   static sendEmployeeOTP = async (req, res) => {
     try {
-      const { empId } = req.body;
-      const result = await AuthService.sendEmployeeOTP(empId);
+      const { empId, phone } = req.body;
+      const result = await AuthService.sendEmployeeOTP(empId, phone);
       res.json({
         success: true,
         message: "OTP has been sent to your registered mobile number",
@@ -60,4 +60,25 @@ export class AuthController {
       });
     }
   };
+
+  static async sendEmailOTP(req, res) {
+    try {
+      const { email } = req.body;
+      const result = await AuthService.sendEmailOTP(email);
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ success: false, message: err.message });
+    }
+  }
+
+  static async verifyEmailOTP(req, res) {
+    try {
+      const { email, code } = req.body;
+
+      const result = await AuthService.verifyEmailOTP(email, code);
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ success: false, message: err.message });
+    }
+  }
 }

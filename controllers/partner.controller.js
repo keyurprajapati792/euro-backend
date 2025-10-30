@@ -40,13 +40,7 @@ export class PartnerController {
 
   static async list(req, res, next) {
     try {
-      const {
-        page = 1,
-        limit = 10,
-        partner_type,
-        sub_type,
-        search,
-      } = req.query;
+      const { page = 1, limit, partner_type, sub_type, search } = req.query;
 
       const filter = {};
       if (partner_type) filter.partner_type = partner_type;

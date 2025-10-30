@@ -18,8 +18,8 @@ export class PartnerService {
     return await Partner.findByIdAndDelete(id);
   }
 
-  static async getPartners(filter = {}, search = "", page = 1, limit = 10) {
-    const skip = (page - 1) * limit;
+  static async getPartners(filter = {}, search = "", page = 1, limit = null) {
+    const skip = (page - 1) * (limit || 0);
 
     const searchCondition = search
       ? {
@@ -35,20 +35,25 @@ export class PartnerService {
 
     const query = { ...filter, ...searchCondition };
 
+    // Build Mongo query
+    let dbQuery = Partner.find(query)
+      .populate("empId", "firstname lastname employeeId contact")
+      .sort({ createdAt: -1 });
+
+    if (limit) {
+      dbQuery = dbQuery.skip(skip).limit(limit);
+    }
+
     const [partners, total] = await Promise.all([
-      Partner.find(query)
-        .populate("empId", "firstname lastname employeeId contact")
-        .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 }),
+      dbQuery,
       Partner.countDocuments(query),
     ]);
 
     return {
       partners,
       total,
-      currentPage: page,
-      totalPages: Math.ceil(total / limit),
+      currentPage: limit ? page : 1,
+      totalPages: limit ? Math.ceil(total / limit) : 1,
     };
   }
 

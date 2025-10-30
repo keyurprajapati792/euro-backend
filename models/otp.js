@@ -27,4 +27,4 @@ OTPSchema.pre("save", async function (next) {
   next();
 });
 
-export default mongoose.model("otp", OTPSchema);
+export default mongoose.model("Otp", OTPSchema);
