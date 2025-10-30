@@ -58,7 +58,7 @@ export const importCSVData = async (filePath) => {
           contactPerson: row["Service POC"]?.trim(),
           phone: row["Service POC Number"]?.trim(),
           address: row["Service Business Partner Address"]?.trim(),
-          partner_type: "service_partner",
+          partner_type: "Service Partner",
           city,
           empId,
         });
@@ -71,7 +71,7 @@ export const importCSVData = async (filePath) => {
           contactPerson: row["Direct POC"]?.trim(),
           phone: row["Direct POC Number"]?.trim(),
           address: row["CRC/Partner Address"]?.trim(),
-          partner_type: "direct_sales_partner",
+          partner_type: "Direct Sales Partner",
           sub_type: row["Direct Sub Channel (CRC/Partner)"]?.trim(),
           city,
           empId,
@@ -84,7 +84,7 @@ export const importCSVData = async (filePath) => {
         const retailPartner = await Partner.create({
           contactPerson: row["Retail POC"]?.trim(),
           phone: row["Retail POC Number"]?.trim(),
-          partner_type: "retail_sales_partner",
+          partner_type: "Retail Sales Partner",
           sub_type: row["Retail Sub Channel (GT/MT/AF)"]?.trim(),
           city,
           empId,

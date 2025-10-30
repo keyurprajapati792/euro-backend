@@ -62,7 +62,7 @@ export class SurveyController {
 
   static async exportCSV(req, res) {
     try {
-      const filter = {};
+      const filter = { state: "submitted" };
 
       if (req.query.partner_type && req.query.partner_type !== "All") {
         filter.partnerType = req.query.partner_type;
