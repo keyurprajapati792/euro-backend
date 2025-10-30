@@ -36,7 +36,7 @@ export class SurveyService {
 
   // 🟦 Get all surveys
   static async getAllSurveys({ partner_type, search, page = 1, limit = 10 }) {
-    const filter = {state: "submitted"};
+    const filter = { state: "submitted" };
     if (partner_type && partner_type !== "All") {
       filter.partnerType = partner_type;
     }
@@ -96,34 +96,51 @@ export class SurveyService {
   }
 
   //Download csv
+
   static async exportSurveysToCSV(filter = {}) {
     const surveys = await Survey.find(filter).populate(
       "partnerId",
-      "name contactPerson phone partner_type city"
+      "name contactPerson phone city partner_type"
     );
 
     if (!surveys.length) {
       throw new Error("No surveys found to export");
     }
 
-    const formatted = surveys.map((s) => ({
-      "Partner Name": s.partnerId?.name || "N/A",
-      " Contact Person": s.partnerId?.contactPerson || "N/A",
-      Phone: s.partnerId?.phone || "N/A",
-      City: s.partnerId?.city || "N/A",
-      "Partner Type": s.partnerType,
-      "Visit Type": s.visitType,
-      "Submitted At": s.submittedAt.toISOString().split("T")[0],
-      Responses: s.responses
-        .map(
-          (r) => `${r.question}: ${r.answer}${r.remark ? ` (${r.remark})` : ""}`
-        )
-        .join("; "),
-    }));
+    const formatted = [];
 
-    const json2csv = new Parser({ header: true });
-    const csv = json2csv.parse(formatted);
+    surveys.forEach((s) => {
+      s.responses.forEach((r, index) => {
+        formatted.push({
+          "Customer ID": index === 0 ? s.customerId : "",
+          "Customer Name": index === 0 ? s.customerName : "",
+          "Customer Phone": index === 0 ? s.customerContact : "",
+          "Customer Email": index === 0 ? s.customerEmail : "",
 
-    return csv;
+          "Partner Name": index === 0 ? s.partnerId?.name || "" : "",
+          "Partner Contact Person":
+            index === 0 ? s.partnerId?.contactPerson || "" : "",
+          "Partner Phone": index === 0 ? s.partnerId?.phone || "" : "",
+          City: index === 0 ? s.partnerId?.city || "" : "",
+          "Partner Type":
+            index === 0 ? s.partnerType || s.partnerId?.partner_type || "" : "",
+
+          "Visit Type": index === 0 ? s.visitType || "" : "",
+          "Submitted At":
+            index === 0
+              ? s.submittedAt
+                ? new Date(s.submittedAt).toISOString().split("T")[0]
+                : ""
+              : "",
+
+          Question: r.question,
+          Answer: r.answer,
+          Remark: r.remark || "",
+        });
+      });
+    });
+
+    const parser = new Parser({ header: true });
+    return parser.parse(formatted);
   }
 }
