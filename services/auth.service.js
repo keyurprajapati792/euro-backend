@@ -38,21 +38,37 @@ export class AuthService {
       throw new Error("Employee contact number not found");
     }
 
-    const SMS_URL = "http://sms6.rmlconnect.net:8080/OtpApi/otpgenerate";
+    // const SMS_URL = "http://sms6.rmlconnect.net:8080/OtpApi/otpgenerate";
 
-    const params = {
-      username: "EUROC2C",
-      password: process.env.RML_PASSWORD,
-      msisdn: employee.contact,
-      source: "EUREKA",
-      otplen: 4,
-      exptime: 120,
-      msg: `OTP for login in to your EuroC2C Account is %m and valid for 2m. OTPs are SECRET. DO NOT disclose to anyone. Eureka Forbes`,
-    };
+    // const params = {
+    //   username: "EUROC2C",
+    //   password: process.env.RML_PASSWORD,
+    //   msisdn: employee.contact,
+    //   source: "EUREKA",
+    //   otplen: 4,
+    //   exptime: 120,
+    //   msg: `OTP for login in to your EuroC2C Account is %m and valid for 2m. OTPs are SECRET. DO NOT disclose to anyone. Eureka Forbes`,
+    // };
 
-    params.msg = encodeURIComponent(params.msg);
+    // params.msg = encodeURIComponent(params.msg);
 
-    const response = await axios.get(SMS_URL, { params });
+    // const response = await axios.get(SMS_URL, { params });
+
+    const response = await axios.post(
+      "https://cpaas.messagecentral.com/verification/v3/send",
+      {}, // body must be empty object
+      {
+        params: {
+          countryCode: 91,
+          mobileNumber: employee.contact,
+          flowType: "SMS",
+          customerId: process.env.CUSTOMER_ID,
+        },
+        headers: {
+          authToken: process.env.MESSAGE_CENTRAL_TOKEN,
+        },
+      }
+    );
 
     return {
       success: true,
@@ -60,7 +76,8 @@ export class AuthService {
       data: {
         otpSent: true,
         employeeId: employee._id,
-        phone: employee.contact, // ✅ return final phone used
+        phone: employee.contact,
+        verificationId: response.data.data.verificationId,
       },
     };
   }
@@ -76,8 +93,7 @@ export class AuthService {
       "https://cpaas.messagecentral.com/verification/v3/validateOtp",
       {
         headers: {
-          authToken:
-            "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJDLTMyRDlCQTU2QThCRjQxMSIsImlhdCI6MTc2MTMzMzYzNCwiZXhwIjoxOTE5MDEzNjM0fQ.6ptoXUPHUGgaikzv3fawylJn84kLSYFGpfM9hNBplswHiqLtPVcUKoObGbwQFdIGELfoXL4BYiLj_TYCDetwuQ",
+          authToken: process.env.MESSAGE_CENTRAL_TOKEN,
         },
         params: {
           countryCode: 91,

@@ -42,14 +42,14 @@ export class AuthController {
   static verifyEmployeeOTP = async (req, res) => {
     try {
       const { empId, code, verificationId } = req.body;
-      const data = await AuthService.verifyEmployeeOTP(
+      const result = await AuthService.verifyEmployeeOTP(
         empId,
         code,
         verificationId
       );
       res.json({
         success: true,
-        data,
+        data: result.data,
         message: "OTP verified successfully",
       });
     } catch (error) {
