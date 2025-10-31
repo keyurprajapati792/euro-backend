@@ -42,19 +42,26 @@ export class SurveyService {
     }
 
     const skip = (page - 1) * limit;
-    let surveysQuery = Survey.find(filter).populate("partnerId");
+    let surveysQuery = Survey.find(filter)
+      .populate("partnerId")
+      .populate("empId");
 
     if (search) {
       const partners = await Partner.find({
         $or: [
-          { name: { $regex: search, $options: "i" } },
-          { contactPerson: { $regex: search, $options: "i" } },
-          { phone: { $regex: search, $options: "i" } },
+          { name: new RegExp(search, "i") },
+          { contactPerson: new RegExp(search, "i") },
+          { phone: new RegExp(search, "i") },
         ],
       }).select("_id");
 
-      const partnerIds = partners.map((p) => p._id);
-      surveysQuery = surveysQuery.find({ partnerId: { $in: partnerIds } });
+      surveysQuery = surveysQuery.find({
+        $or: [
+          { partnerId: { $in: partners.map((p) => p._id) } },
+          { customerName: new RegExp(search, "i") },
+          { customerContact: new RegExp(search, "i") },
+        ],
+      });
     }
 
     const [surveys, total] = await Promise.all([
@@ -98,44 +105,55 @@ export class SurveyService {
   //Download csv
 
   static async exportSurveysToCSV(filter = {}) {
-    const surveys = await Survey.find(filter).populate(
-      "partnerId",
-      "name contactPerson phone city partner_type"
-    );
+    const surveys = await Survey.find(filter)
+      .populate("partnerId", "name contactPerson phone city partner_type")
+      .populate("empId", "firstname lastname empId contact");
 
-    if (!surveys.length) {
-      throw new Error("No surveys found to export");
-    }
+    if (!surveys.length) throw new Error("No surveys found to export");
 
     const formatted = [];
 
     surveys.forEach((s) => {
       s.responses.forEach((r, index) => {
         formatted.push({
-          "Customer ID": index === 0 ? s.customerId : "",
-          "Customer Name": index === 0 ? s.customerName : "",
-          "Customer Phone": index === 0 ? s.customerContact : "",
-          "Customer Email": index === 0 ? s.customerEmail : "",
+          "Customer ID": index === 0 ? s.customerId ?? "N/A" : "",
+          "Customer Name": index === 0 ? s.customerName ?? "N/A" : "",
+          "Customer Phone": index === 0 ? s.customerContact ?? "N/A" : "",
+          "Customer Store Name":
+            index === 0 ? s.customerStoreName ?? "N/A" : "",
+          "Customer Store Location":
+            index === 0 ? s.customerStoreLocation ?? "N/A" : "",
+          "Employee Name":
+            index === 0
+              ? `${s.empId?.firstname ?? "N/A"} ${
+                  s.empId?.lastname ?? ""
+                }`.trim()
+              : "",
+          "Employee ID": index === 0 ? s.empId?.empId ?? "N/A" : "",
+          "Employee Contact": index === 0 ? s.empId?.contact ?? "N/A" : "",
 
-          "Partner Name": index === 0 ? s.partnerId?.name || "" : "",
+          "Partner Name": index === 0 ? s.partnerId?.name ?? "N/A" : "",
           "Partner Contact Person":
-            index === 0 ? s.partnerId?.contactPerson || "" : "",
-          "Partner Phone": index === 0 ? s.partnerId?.phone || "" : "",
-          City: index === 0 ? s.partnerId?.city || "" : "",
+            index === 0 ? s.partnerId?.contactPerson ?? "N/A" : "",
+          "Partner Phone": index === 0 ? s.partnerId?.phone ?? "N/A" : "",
+          City: index === 0 ? s.partnerId?.city ?? "N/A" : "",
           "Partner Type":
-            index === 0 ? s.partnerType || s.partnerId?.partner_type || "" : "",
-
-          "Visit Type": index === 0 ? s.visitType || "" : "",
+            index === 0
+              ? s.partnerType ?? s.partnerId?.partner_type ?? "N/A"
+              : "",
+          "Visit Type": index === 0 ? s.visitType ?? "N/A" : "",
           "Submitted At":
             index === 0
               ? s.submittedAt
                 ? new Date(s.submittedAt).toISOString().split("T")[0]
-                : ""
+                : "N/A"
               : "",
 
-          Question: r.question,
-          Answer: r.answer,
-          Remark: r.remark || "",
+          Question: r.question ?? "N/A",
+          Answer: Array.isArray(r.answer)
+            ? r.answer.join(", ")
+            : r.answer ?? "N/A",
+          Remark: r.remark ?? "N/A",
         });
       });
     });
