@@ -5,14 +5,23 @@ export class AuthController {
   static adminLogin = (req, res) => {
     try {
       const { email, password } = req.body;
+
       const token = AuthService.adminLogin(email, password);
-      res.json({
+
+      res.cookie("adminToken", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+
+      return res.json({
         success: true,
-        data: token,
         message: "Admin login successful",
+        data: { loggedIn: true },
       });
     } catch (error) {
-      res.status(401).json({
+      return res.status(401).json({
         success: false,
         message: error.message || "Invalid credentials",
       });
@@ -41,20 +50,28 @@ export class AuthController {
   // Employee verify OTP
   static verifyEmployeeOTP = async (req, res) => {
     try {
-      const { empId, code, verificationId } = req.body;
-      const result = await AuthService.verifyEmployeeOTP(
-        empId,
-        code,
-        verificationId
-      );
-      res.json({
+      const { empId, code } = req.body;
+
+      const result = await AuthService.verifyEmployeeOTP(empId, code);
+
+      res.cookie("authToken", result.data.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return res.json({
         success: true,
-        data: result.data,
-        message: "OTP verified successfully",
+        message: result.message,
+        data: {
+          role: "employee",
+          employee: result.data.employee,
+        },
       });
     } catch (error) {
-      console.log(error);
-      res.status(401).json({
+      console.log("OTP VERIFY ERROR:", error.message);
+      return res.status(401).json({
         success: false,
         message: error.message || "Invalid OTP or expired",
       });
@@ -76,7 +93,22 @@ export class AuthController {
       const { email, code } = req.body;
 
       const result = await AuthService.verifyEmailOTP(email, code);
-      res.json(result);
+
+      res.cookie("authToken", result.data.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return res.json({
+        success: true,
+        message: "Login successful",
+        data: {
+          role: "employee",
+          employee: result.data.employee,
+        },
+      });
     } catch (err) {
       res.status(400).json({ success: false, message: err.message });
     }

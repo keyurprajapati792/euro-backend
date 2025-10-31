@@ -38,38 +38,17 @@ export class AuthService {
       throw new Error("Employee contact number not found");
     }
 
-    // const SMS_URL = "http://sms6.rmlconnect.net:8080/OtpApi/otpgenerate";
-
-    // const params = {
-    //   username: "EUROC2C",
-    //   password: process.env.RML_PASSWORD,
-    //   msisdn: employee.contact,
-    //   source: "EUREKA",
-    //   otplen: 4,
-    //   exptime: 120,
-    //   msg: `OTP for login in to your EuroC2C Account is %m and valid for 2m. OTPs are SECRET. DO NOT disclose to anyone. Eureka Forbes`,
-    // };
-
-    // params.msg = encodeURIComponent(params.msg);
-
-    // const response = await axios.get(SMS_URL, { params });
-
     const response = await axios.post(
-      "https://cpaas.messagecentral.com/verification/v3/send",
-      {}, // body must be empty object
-      {
-        params: {
-          countryCode: 91,
-          mobileNumber: employee.contact,
-          flowType: "SMS",
-          customerId: process.env.CUSTOMER_ID,
-        },
-        headers: {
-          authToken: process.env.MESSAGE_CENTRAL_TOKEN,
-        },
-      }
+      `https://sms6.rmlconnect.net:8443/OtpApi/otpgenerate?username=EUROC2C&password=${process.env.RML_PASSWORD}&msisdn=${employee.contact}&source=EUREKA&otplen=4&exptime=60&msg=OTP%20for%20login%20in%20to%20your%20EuroC2C%20Account%20is%20%25m%20and%20valid%20for%202%20minuites.%20OTPs%20are%20SECRET.%20DO%20NOT%20disclose%20to%20anyone.%20Eureka%20Forbes`
     );
 
+    const respStr = response?.data != null ? response.data.toString() : "";
+
+    if (!respStr.includes("1701")) {
+      throw new Error(`Something went wrong while sending OTP.`);
+    }
+
+    // success
     return {
       success: true,
       message: "OTP sent successfully",
@@ -77,53 +56,43 @@ export class AuthService {
         otpSent: true,
         employeeId: employee._id,
         phone: employee.contact,
-        verificationId: response.data.data.verificationId,
+        providerResponse: respStr,
       },
     };
   }
 
   // 🔹 Verify OTP
-  static async verifyEmployeeOTP(empId, code, verificationId) {
+  static async verifyEmployeeOTP(empId, code) {
     const employee = await Employee.findOne({ empId });
     if (!employee) throw new Error("Employee with this ID does not exist");
-
     if (!employee.contact) throw new Error("Employee mobile number not found");
 
-    const response = await axios.get(
-      "https://cpaas.messagecentral.com/verification/v3/validateOtp",
-      {
-        headers: {
-          authToken: process.env.MESSAGE_CENTRAL_TOKEN,
-        },
-        params: {
-          countryCode: 91,
-          mobileNumber: employee.contact,
-          verificationId,
-          customerId: process.env.CUSTOMER_ID,
-          code,
-        },
-      }
-    );
+    const url = `https://sms6.rmlconnect.net:8443/OtpApi/checkotp?username=EUROC2C&password=${process.env.RML_PASSWORD}&msisdn=${employee.contact}&otp=${code}`;
 
-    if (response.status !== 200) {
-      throw new Error("Incorrect OTP");
+    const response = await axios.get(url);
+    const result = response.data;
+
+    if (result == 101) {
+      // generate token here
+      const token = jwt.sign(
+        { id: employee._id, role: "employee" },
+        process.env.JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      return {
+        success: true,
+        message: "OTP verified successfully",
+        data: {
+          employee,
+          token,
+        },
+      };
     }
 
-    const token = jwt.sign(
-      { role: "employee", empId: employee.empId, id: employee._id },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRE }
-    );
-
-    return {
-      success: true,
-      message: "OTP verified successfully",
-      data: {
-        employee,
-        token,
-      },
-    };
+    throw new Error("Invalid OTP or expired");
   }
+
   static async sendEmailOTP(email) {
     const employee = await Employee.findOne({ email });
     if (!employee) throw new Error("Employee email does not exist");

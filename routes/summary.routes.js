@@ -1,9 +1,10 @@
 import express from "express";
 import { SummaryController } from "../controllers/summary.controller.js";
+import { authMiddleware } from "../utils/authMiddleware.js";
 
 const router = express.Router();
 
-// Protected route example
-router.get("/stats", SummaryController.dashboard);
+// Admin only dashboard stats route
+router.get("/stats", authMiddleware(["admin"]), SummaryController.dashboard);
 
 export default router;

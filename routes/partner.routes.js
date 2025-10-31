@@ -1,13 +1,16 @@
 import express from "express";
 import { PartnerController } from "../controllers/partner.controller.js";
+import { authMiddleware } from "../utils/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", PartnerController.create);
-router.get("/", PartnerController.list);
-router.get("/:id", PartnerController.getById);
-router.get("/by-employee/:empId", PartnerController.getByEmpId);
-router.put("/:id", PartnerController.update);
-router.delete("/:id", PartnerController.delete);
+const allowBoth = authMiddleware(["admin", "employee"]);
+
+router.post("/", allowBoth, PartnerController.create);
+router.get("/", allowBoth, PartnerController.list);
+router.get("/:id", allowBoth, PartnerController.getById);
+router.get("/by-employee/:empId", allowBoth, PartnerController.getByEmpId);
+router.put("/:id", allowBoth, PartnerController.update);
+router.delete("/:id", allowBoth, PartnerController.delete);
 
 export default router;

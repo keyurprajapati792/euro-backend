@@ -14,6 +14,8 @@ import summaryRoutes from "./routes/summary.routes.js";
 import surveyRoutes from "./routes/survey.routes.js";
 import { importCSVData } from "./utils/csvImport.js";
 
+import cookieParser from "cookie-parser";
+
 dotenv.config();
 connectDB();
 
@@ -21,7 +23,24 @@ const app = express();
 
 // -------------------- Middlewares --------------------
 app.use(express.json());
-app.use(cors());
+
+const allowedOrigins = [
+  process.env.CLIENT_URL_LOCAL,
+  process.env.CLIENT_URL_PROD,
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["set-cookie"],
+  })
+);
+
+app.use(cookieParser());
+
 app.use(morgan("dev"));
 
 // -------------------- Routes --------------------
