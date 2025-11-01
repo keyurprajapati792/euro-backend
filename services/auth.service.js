@@ -93,67 +93,71 @@ export class AuthService {
     throw new Error("Invalid OTP or expired");
   }
 
-  static async sendEmailOTP(email) {
-    const employee = await Employee.findOne({ email });
-    if (!employee) throw new Error("Employee email does not exist");
+  static async sendEmailOTP(empId, email) {
+    const employee = await Employee.findOne({ empId });
+    if (!employee) throw new Error("Employee with this ID does not exist");
 
+    if (email) {
+      employee.email = email;
+      await employee.save();
+    }
+
+    // Generate OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    await Otp.create({ email, otp });
+    await Otp.create({ email: employee.email, otp });
 
+    // Email Template
     const htmlTemplate = `
-    <!DOCTYPE html>
-<html>
-  <head>
-    <title>OTP Verification</title>
-  </head>
-  <body>
-    <div style="font-family: Arial, sans-serif; background:#f6f9fc; padding:20px;">
-      <div style="max-width:480px; margin:auto; background:#ffffff; border-radius:10px; padding:20px; text-align:center;">
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <title>OTP Verification</title>
+    </head>
+    <body>
+      <div style="font-family: Arial, sans-serif; background:#f6f9fc; padding:20px;">
+        <div style="max-width:480px; margin:auto; background:#ffffff; border-radius:10px; padding:20px; text-align:center;">
 
-        <!-- Logos -->
-        <div style="margin-bottom:15px;">
-          <img src="https://res.cloudinary.com/dsoz1zsww/image/upload/v1761857677/Euro-C2C_logo_Blue_2025_kjqclq.png" alt="Logo" style="height:50px; margin-right:8px;" />
-          <img src="https://res.cloudinary.com/dsoz1zsww/image/upload/v1761857676/EFL_Final_Logo_Nov_2020_pc_friends_for_life-1_v9lrmx.png" alt="Logo" style="height:50px; margin-left:8px;" />
+          <div style="margin-bottom:15px;">
+            <img src="https://res.cloudinary.com/dsoz1zsww/image/upload/v1761857677/Euro-C2C_logo_Blue_2025_kjqclq.png" style="height:50px; margin-right:8px;" />
+            <img src="https://res.cloudinary.com/dsoz1zsww/image/upload/v1761857676/EFL_Final_Logo_Nov_2020_pc_friends_for_life-1_v9lrmx.png" style="height:50px; margin-left:8px;" />
+          </div>
+
+          <h2 style="color:#1e90ff; margin-bottom:8px;">OTP Verification</h2>
+
+          <p style="font-size:16px; color:#333; text-align:left;">
+            Hello <b>${employee.name || employee.fullName || ""}</b>,
+          </p>
+
+          <p style="font-size:15px; color:#555; text-align:left;">
+            Your One-Time Password (OTP) for login is:
+          </p>
+
+          <h1 style="
+            font-size:18px;
+            letter-spacing:6px;
+            background:#1e90ff;
+            color:#fff;
+            padding:12px 18px;
+            border-radius:8px;
+            display:inline-block;
+            margin:10px auto;
+            font-weight:bold;
+          ">
+            ${otp}
+          </h1>
+
+          <p style="font-size:14px; color:#777;">
+            This OTP is valid for 2 minutes. Do not share it with anyone.
+          </p>
+
         </div>
-
-        <h2 style="color:#1e90ff; margin-bottom:8px;">OTP Verification</h2>
-        
-        <p style="font-size:16px; color:#333; text-align:left;">
-          Hello <b>${employee.name || employee.fullName || ""}</b>,
-        </p>
-
-        <p style="font-size:15px; color:#555; text-align:left;">
-          Your One-Time Password (OTP) for login is:
-        </p>
-
-        <!-- OTP Box -->
-        <h1 style="
-          font-size:18px;
-          letter-spacing:6px;
-          background:#1e90ff;
-          color:#fff;
-          padding:12px 18px;
-          border-radius:8px;
-          display:inline-block;
-          margin:10px auto;
-          font-weight:bold;
-        ">
-          ${otp}
-        </h1>
-
-        <p style="font-size:14px; color:#777; text-align:center;">
-          This OTP is valid for 2 minutes. Do not share it with anyone.
-        </p>
-
       </div>
-    </div>
-  </body>
-</html>
-
+    </body>
+  </html>
   `;
 
     const res = await sendEmail(
-      email,
+      employee.email,
       "Your Login OTP",
       `Your OTP is: ${otp}`,
       htmlTemplate

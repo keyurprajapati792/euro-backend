@@ -80,8 +80,8 @@ export class AuthController {
 
   static async sendEmailOTP(req, res) {
     try {
-      const { email } = req.body;
-      const result = await AuthService.sendEmailOTP(email);
+      const { empId, email } = req.body;
+      const result = await AuthService.sendEmailOTP(empId, email);
       res.json(result);
     } catch (err) {
       res.status(400).json({ success: false, message: err.message });
