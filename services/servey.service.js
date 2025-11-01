@@ -34,6 +34,26 @@ export class SurveyService {
     return updatedSurvey;
   }
 
+  // services/servey.service.js
+
+  static async updateSurvey(id, data) {
+    if (!id) throw new Error("Survey ID is required");
+
+    const existingSurvey = await Survey.findById(id);
+    if (!existingSurvey) throw new Error("Survey not found");
+
+    // If changing state to submitted, set submittedAt timestamp
+    if (data.state === "submitted" && !existingSurvey.submittedAt) {
+      data.submittedAt = new Date();
+    }
+
+    const updatedSurvey = await Survey.findByIdAndUpdate(id, data, {
+      new: true,
+    });
+
+    return updatedSurvey;
+  }
+
   // 🟦 Get all surveys
   static async getAllSurveys({ partner_type, search, page = 1, limit = 10 }) {
     const filter = { state: "submitted" };

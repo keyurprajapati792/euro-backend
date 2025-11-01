@@ -25,6 +25,26 @@ export class SurveyController {
     }
   }
 
+  static async updateSurvey(req, res) {
+    try {
+      const { id } = req.params;
+      const data = req.body;
+
+      const result = await SurveyService.updateSurvey(id, data);
+
+      res.json({
+        success: true,
+        message: "Survey updated successfully",
+        data: result,
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
   // 🟦 Get all surveys
   static async getAllSurveys(req, res) {
     try {

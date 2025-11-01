@@ -8,6 +8,7 @@ const router = express.Router();
 const allowBoth = authMiddleware(["admin", "employee"]);
 
 router.post("/", allowBoth, SurveyController.submitSurvey);
+router.put("/:id", SurveyController.updateSurvey);
 router.get("/", allowBoth, SurveyController.getAllSurveys);
 router.get("/by-employee", allowBoth, SurveyController.getSurveyByEmployee);
 router.delete("/:id", allowBoth, SurveyController.deleteSurvey);
