@@ -15,23 +15,15 @@ export class SurveyService {
       throw new Error("All required fields must be provided");
     }
 
-    // Auto add submittedAt only when final submission
+    // Add submittedAt only for final submission
     if (data.state === "submitted") {
       data.submittedAt = new Date();
     }
 
-    const updatedSurvey = await Survey.findOneAndUpdate(
-      {
-        partnerId: data.partnerId,
-        partnerType: data.partnerType,
-        visitType: data.visitType,
-        customerId: data.customerId,
-      },
-      { $set: data },
-      { new: true, upsert: true }
-    );
+    // Create new survey only — no updating, no searching
+    const newSurvey = await Survey.create(data);
 
-    return updatedSurvey;
+    return newSurvey;
   }
 
   // services/servey.service.js
