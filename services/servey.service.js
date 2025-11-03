@@ -78,7 +78,7 @@ export class SurveyService {
 
     const [surveys, total] = await Promise.all([
       surveysQuery.skip(skip).limit(limit),
-      surveysQuery.clone().countDocuments(),
+      Survey.countDocuments(filter),
     ]);
 
     return {
@@ -157,7 +157,15 @@ export class SurveyService {
           "Submitted At":
             index === 0
               ? s.submittedAt
-                ? new Date(s.submittedAt).toISOString().split("T")[0]
+                ? new Date(s.submittedAt).toLocaleString("en-IN", {
+                    timeZone: "Asia/Kolkata",
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  })
                 : "N/A"
               : "",
 
