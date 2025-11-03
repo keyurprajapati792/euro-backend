@@ -1,32 +1,52 @@
 import { AuthService } from "../services/auth.service.js";
 
 export class AuthController {
-  // Admin login
-  static adminLogin = (req, res) => {
+  //  Admin send OTP
+  static async sendAdminOTP(req, res) {
     try {
-      const { email, password } = req.body;
+      const { contact } = req.body;
 
-      const token = AuthService.adminLogin(email, password);
+      const result = await AuthService.sendAdminOTP(contact);
 
-      res.cookie("adminToken", token, {
+      return res.json({
+        success: true,
+        message: "OTP sent successfully to admin phone",
+        data: result,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Failed to send OTP",
+      });
+    }
+  }
+
+  //  Admin verify OTP
+  static async verifyAdminOTP(req, res) {
+    try {
+      const { contact, otp } = req.body;
+
+      const result = await AuthService.verifyAdminOTP(contact, otp);
+
+      res.cookie("adminToken", result.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
       });
 
       return res.json({
         success: true,
         message: "Admin login successful",
-        data: { loggedIn: true },
+        data: { role: "admin" },
       });
     } catch (error) {
       return res.status(401).json({
         success: false,
-        message: error.message || "Invalid credentials",
+        message: error.message || "Invalid OTP",
       });
     }
-  };
+  }
 
   // Employee send OTP
   static sendEmployeeOTP = async (req, res) => {

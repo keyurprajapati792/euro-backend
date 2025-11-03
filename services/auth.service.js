@@ -9,20 +9,42 @@ dotenv.config();
 
 export class AuthService {
   // 🔹 Admin login (hardcoded)
-  static adminLogin(email, password) {
-    if (email !== process.env.ADMIN_EMAIL) {
-      throw new Error("Admin email is incorrect");
+  static async sendAdminOTP(contact) {
+    const adminContacts = process.env.ADMIN_CONTACTS?.split(",") || [];
+
+    // Validate contact
+    if (!adminContacts.includes(contact)) {
+      throw new Error("Unauthorized admin contact");
     }
 
-    if (password !== process.env.ADMIN_PASSWORD) {
-      throw new Error("Admin password is incorrect");
+    const smsUrl = `https://sms6.rmlconnect.net:8443/OtpApi/otpgenerate?username=EUROC2C&password=${process.env.RML_PASSWORD}&msisdn=${contact}&source=EUREKA&otplen=4&exptime=120&msg=OTP%20for%20logging%20into%20your%20EuroC2C%20Account%20is%20%25m%20and%20valid%20for%202%20minutes.%20OTPs%20are%20SECRET.%20DO%20NOT%20disclose%20to%20anyone.%20Eureka%20Forbes`;
+
+    const response = await axios.post(smsUrl);
+    const respStr = response?.data?.toString() || "";
+
+    if (!respStr.includes("1701")) throw new Error("Failed to send OTP");
+
+    return { otpSent: true };
+  }
+
+  // ✅ Verify admin OTP
+  static async verifyAdminOTP(contact, otp) {
+    if (contact !== process.env.ADMIN_CONTACT) {
+      throw new Error("Unauthorized admin contact");
     }
 
-    const token = jwt.sign({ role: "admin", email }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRE,
+    const verifyUrl = `https://sms6.rmlconnect.net:8443/OtpApi/checkotp?username=EUROC2C&password=${process.env.RML_PASSWORD}&msisdn=${contact}&otp=${otp}`;
+
+    const response = await axios.get(verifyUrl);
+    const result = response.data;
+
+    if (result != 101) throw new Error("Invalid or expired OTP");
+
+    const token = jwt.sign({ role: "admin", contact }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
     });
 
-    return token;
+    return { success: true, token };
   }
 
   static async sendEmployeeOTP(empId, phone) {
@@ -39,7 +61,7 @@ export class AuthService {
     }
 
     const response = await axios.post(
-      `https://sms6.rmlconnect.net:8443/OtpApi/otpgenerate?username=EUROC2C&password=${process.env.RML_PASSWORD}&msisdn=${employee.contact}&source=EUREKA&otplen=4&exptime=60&msg=OTP%20for%20login%20in%20to%20your%20EuroC2C%20Account%20is%20%25m%20and%20valid%20for%202%20minuites.%20OTPs%20are%20SECRET.%20DO%20NOT%20disclose%20to%20anyone.%20Eureka%20Forbes`
+      `https://sms6.rmlconnect.net:8443/OtpApi/otpgenerate?username=EUROC2C&password=${process.env.RML_PASSWORD}&msisdn=${employee.contact}&source=EUREKA&otplen=4&exptime=120&msg=OTP%20for%20logging%20into%20your%20EuroC2C%20Account%20is%20%25m%20and%20valid%20for%202%20minutes.%20OTPs%20are%20SECRET.%20DO%20NOT%20disclose%20to%20anyone.%20Eureka%20Forbes`
     );
 
     const respStr = response?.data != null ? response.data.toString() : "";
