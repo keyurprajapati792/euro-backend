@@ -29,10 +29,6 @@ export class AuthService {
 
   // ✅ Verify admin OTP
   static async verifyAdminOTP(contact, otp) {
-    if (contact !== process.env.ADMIN_CONTACT) {
-      throw new Error("Unauthorized admin contact");
-    }
-
     const verifyUrl = `https://sms6.rmlconnect.net:8443/OtpApi/checkotp?username=EUROC2C&password=${process.env.RML_PASSWORD}&msisdn=${contact}&otp=${otp}`;
 
     const response = await axios.get(verifyUrl);
