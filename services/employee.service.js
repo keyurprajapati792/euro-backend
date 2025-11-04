@@ -151,6 +151,8 @@ export class EmployeeService {
             {
               $project: {
                 partnerId: "$_id",
+                partnerName: "$name", // ✅ Partner Name
+                contactPerson: 1, // ✅ Contact Person
                 visitDate: "$employeeVisits.visitDate",
                 _id: 0,
               },
@@ -185,8 +187,6 @@ export class EmployeeService {
             {
               $project: {
                 partnerId: "$_id",
-                name: 1,
-                contactPerson: 1,
                 visitDate: "$employeeVisits.visitDate",
                 _id: 0,
               },
