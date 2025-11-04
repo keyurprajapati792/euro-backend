@@ -11,6 +11,7 @@ export class PartnerService {
       new: true,
       runValidators: true,
     });
+
     return updatedPartner;
   }
 
@@ -35,9 +36,8 @@ export class PartnerService {
 
     const query = { ...filter, ...searchCondition };
 
-    // Build Mongo query
     let dbQuery = Partner.find(query)
-      .populate("empId", "firstname lastname employeeId contact")
+      .populate("employeeVisits.employeeId", "firstname lastname empId contact")
       .sort({ createdAt: -1 });
 
     if (limit) {
@@ -59,12 +59,17 @@ export class PartnerService {
 
   static async getPartnerById(id) {
     return await Partner.findById(id).populate(
-      "empId",
-      "firstname lastname employeeId contact"
+      "employeeVisits.employeeId",
+      "firstname lastname empId contact"
     );
   }
 
   static async getPartnerByEmpId(empId) {
-    return await Partner.find({ empId });
+    return await Partner.find({
+      "employeeVisits.employeeId": empId,
+    }).populate(
+      "employeeVisits.employeeId",
+      "firstname lastname empId contact"
+    );
   }
 }

@@ -131,20 +131,70 @@ export class EmployeeService {
         }
       : {};
 
-    const [employees, total] = await Promise.all([
-      Employee.find(searchCondition)
-        .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 }),
-      Employee.countDocuments(searchCondition),
+    const employees = await Employee.aggregate([
+      { $match: searchCondition },
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+
+      {
+        $lookup: {
+          from: "partners",
+          let: { empId: "$_id" },
+          pipeline: [
+            { $unwind: "$employeeVisits" },
+            {
+              $match: {
+                $expr: { $eq: ["$employeeVisits.employeeId", "$$empId"] },
+              },
+            },
+            {
+              $project: {
+                partnerId: "$_id",
+                visitDate: "$employeeVisits.visitDate",
+                _id: 0,
+              },
+            },
+          ],
+          as: "partnerVisits",
+        },
+      },
     ]);
 
+    const total = await Employee.countDocuments(searchCondition);
     const totalPages = Math.ceil(total / limit);
 
     return { employees, total, totalPages, currentPage: page };
   }
 
   static async getEmployeeById(id) {
-    return await Employee.findById(id);
+    const results = await Employee.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(id) } },
+
+      {
+        $lookup: {
+          from: "partners",
+          let: { empId: "$_id" },
+          pipeline: [
+            { $unwind: "$employeeVisits" },
+            {
+              $match: {
+                $expr: { $eq: ["$employeeVisits.employeeId", "$$empId"] },
+              },
+            },
+            {
+              $project: {
+                partnerId: "$_id",
+                visitDate: "$employeeVisits.visitDate",
+                _id: 0,
+              },
+            },
+          ],
+          as: "partnerVisits",
+        },
+      },
+    ]);
+
+    return results[0];
   }
 }
