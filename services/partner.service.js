@@ -65,11 +65,65 @@ export class PartnerService {
   }
 
   static async getPartnerByEmpId(empId) {
-    return await Partner.find({
-      "employeeVisits.employeeId": empId,
-    }).populate(
-      "employeeVisits.employeeId",
-      "firstname lastname empId contact"
-    );
+    const objectId = new mongoose.Types.ObjectId(empId);
+
+    const partners = await Partner.aggregate([
+      {
+        $match: {
+          "employeeVisits.employeeId": objectId,
+        },
+      },
+      // Only keep visits for this specific employee
+      {
+        $project: {
+          name: 1,
+          contactPerson: 1,
+          phone: 1,
+          address: 1,
+          city: 1,
+          partner_type: 1,
+          sub_type: 1,
+          employeeVisits: {
+            $filter: {
+              input: "$employeeVisits",
+              as: "visit",
+              cond: { $eq: ["$$visit.employeeId", objectId] },
+            },
+          },
+        },
+      },
+      // Lookup to get employee info
+      {
+        $lookup: {
+          from: "employees",
+          localField: "employeeVisits.employeeId",
+          foreignField: "_id",
+          as: "employeeInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$employeeInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          "employeeVisits.employee": {
+            firstname: "$employeeInfo.firstname",
+            lastname: "$employeeInfo.lastname",
+            empId: "$employeeInfo.empId",
+            contact: "$employeeInfo.contact",
+          },
+        },
+      },
+      {
+        $project: {
+          employeeInfo: 0,
+        },
+      },
+    ]);
+
+    return partners;
   }
 }
