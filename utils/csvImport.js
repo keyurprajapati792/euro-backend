@@ -22,10 +22,8 @@ async function addOrUpdatePartner({
 }) {
   if (!contactPerson) return;
 
-  // Find partner by contact person
   let partner = await Partner.findOne({ contactPerson: contactPerson.trim() });
 
-  // If not exists, create new partner
   if (!partner) {
     partner = new Partner({
       partner_type,
@@ -38,7 +36,6 @@ async function addOrUpdatePartner({
       employeeVisits: [],
     });
   } else {
-    // Update name/phone/address if missing
     if (name && !partner.name) partner.name = name;
     if (phone && !partner.phone) partner.phone = phone;
     if (address && !partner.address) partner.address = address;
@@ -46,7 +43,6 @@ async function addOrUpdatePartner({
     if (sub_type && !partner.sub_type) partner.sub_type = sub_type;
   }
 
-  // Avoid duplicate employee visit entry
   const exists = partner.employeeVisits.find(
     (v) =>
       v.employeeId.toString() === employeeId.toString() &&
@@ -70,11 +66,11 @@ export const importCSVData = async (filePath) => {
 
     fs.createReadStream(filePath)
       .pipe(csv())
-      .on("data", (row) => {
+      .on("data", async (row) => {
         buffer.push(row);
 
         if (buffer.length >= BATCH_SIZE) {
-          processChunk(buffer);
+          await processChunk(buffer);
           buffer = [];
         }
       })
@@ -82,6 +78,7 @@ export const importCSVData = async (filePath) => {
         if (buffer.length > 0) {
           await processChunk(buffer);
         }
+
         console.log("✅ CSV Import Completed");
         resolve();
       })
@@ -117,7 +114,6 @@ async function processChunk(rows) {
 
       const employeeId = employee._id;
 
-      // Visit dates
       const serviceVisitDate = row["Service Partner Visit Date"]?.trim() || "";
       const directVisitDate = row["Direct Partner Visit Date"]?.trim() || "";
       const retailVisitDate = row["Retail Partner Visit Date"]?.trim() || "";

@@ -85,7 +85,11 @@ app.post("/api/csv/upload", upload.single("file"), async (req, res, next) => {
     }
 
     const filePath = req.file.path;
+
     await importCSVData(filePath);
+
+    // ✅ Remove file after import
+    fs.unlinkSync(filePath);
 
     res.json({
       success: true,
