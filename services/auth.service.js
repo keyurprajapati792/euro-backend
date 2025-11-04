@@ -156,27 +156,32 @@ export class AuthService {
             Hello <b>${employee.name || employee.fullName || ""}</b>,
           </p>
 
-          <p style="font-size:15px; color:#555; text-align:left;">
-            Your One-Time Password (OTP) for login is:
-          </p>
+          <p style="font-size:16px; color:#333; text-align:left;">
+  Hello <b>${employee.name || employee.fullName || ""}</b>,
+</p>
 
-          <h1 style="
-            font-size:18px;
-            letter-spacing:6px;
-            background:#1e90ff;
-            color:#fff;
-            padding:12px 18px;
-            border-radius:8px;
-            display:inline-block;
-            margin:10px auto;
-            font-weight:bold;
-          ">
-            ${otp}
-          </h1>
+<p style="font-size:15px; color:#555; text-align:left;">
+  Your One-Time Password (OTP) for login is:
+</p>
 
-          <p style="font-size:14px; color:#777;">
-            This OTP is valid for 2 minutes. Do not share it with anyone.
-          </p>
+<h1 style="
+  font-size:18px;
+  letter-spacing:6px;
+  background:#1e90ff;
+  color:#fff;
+  padding:12px 18px;
+  border-radius:8px;
+  display:inline-block;
+  margin:10px auto;
+  font-weight:bold;
+">
+  ${otp}
+</h1>
+
+<p style="font-size:14px; color:#777;">
+  This OTP is valid for 2 minutes. Please do not share it with anyone.
+</p>
+
 
         </div>
       </div>
