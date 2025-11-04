@@ -1,4 +1,5 @@
 import Partner from "../models/partner.js";
+import mongoose from "mongoose";
 
 export class PartnerService {
   static async createPartner(data) {
