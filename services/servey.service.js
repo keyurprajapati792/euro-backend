@@ -56,7 +56,8 @@ export class SurveyService {
     const skip = (page - 1) * limit;
     let surveysQuery = Survey.find(filter)
       .populate("partnerId")
-      .populate("empId");
+      .populate("empId")
+      .sort({ submittedAt: -1 });
 
     if (search) {
       const partners = await Partner.find({
@@ -154,14 +155,23 @@ export class SurveyService {
               ? s.partnerType ?? s.partnerId?.partner_type ?? "N/A"
               : "",
           "Visit Type": index === 0 ? s.visitType ?? "N/A" : "",
-          "Submitted At":
+          "Submitted Date":
             index === 0
               ? s.submittedAt
-                ? new Date(s.submittedAt).toLocaleString("en-IN", {
+                ? new Date(s.submittedAt).toLocaleDateString("en-IN", {
                     timeZone: "Asia/Kolkata",
                     year: "numeric",
                     month: "2-digit",
                     day: "2-digit",
+                  })
+                : "N/A"
+              : "",
+
+          "Submitted Time":
+            index === 0
+              ? s.submittedAt
+                ? new Date(s.submittedAt).toLocaleTimeString("en-IN", {
+                    timeZone: "Asia/Kolkata",
                     hour: "2-digit",
                     minute: "2-digit",
                     hour12: true,

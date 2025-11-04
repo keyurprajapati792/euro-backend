@@ -3,16 +3,23 @@ import Partner from "../models/partner.js";
 
 export class EmployeeService {
   static async createEmployee(data) {
-    const employee = new Employee(data);
+    // Convert empty strings to null
+    const cleanedData = {
+      ...data,
+      servicePartnerId: data.servicePartnerId || null,
+      directPartnerId: data.directPartnerId || null,
+      retailPartnerId: data.retailPartnerId || null,
+    };
+
+    const employee = new Employee(cleanedData);
     const savedEmployee = await employee.save();
 
     const partnerIds = [
-      data.servicePartnerId,
-      data.directPartnerId,
-      data.retailPartnerId,
+      cleanedData.servicePartnerId,
+      cleanedData.directPartnerId,
+      cleanedData.retailPartnerId,
     ].filter(Boolean);
 
-    // Assign this employee to all selected partners
     for (const partnerId of partnerIds) {
       await Partner.findByIdAndUpdate(partnerId, {
         empId: savedEmployee._id,
@@ -26,33 +33,40 @@ export class EmployeeService {
     const existingEmployee = await Employee.findById(id);
     if (!existingEmployee) return null;
 
+    // Convert empty strings to null
+    const cleanedData = {
+      ...data,
+      servicePartnerId: data.servicePartnerId || null,
+      directPartnerId: data.directPartnerId || null,
+      retailPartnerId: data.retailPartnerId || null,
+    };
+
     const partnerKeys = [
       "servicePartnerId",
       "directPartnerId",
       "retailPartnerId",
     ];
 
-    // Remove empId from old partners if employee has been reassigned
+    // Remove empId from old partners when employee moved
     for (const key of partnerKeys) {
       if (
-        existingEmployee[key] && // old partner exists
-        data[key] && // new partner exists
-        existingEmployee[key].toString() !== data[key] // changed
+        existingEmployee[key] &&
+        cleanedData[key] !== existingEmployee[key].toString()
       ) {
-        await Partner.findByIdAndUpdate(existingEmployee[key], {
-          empId: null,
-        });
+        await Partner.findByIdAndUpdate(existingEmployee[key], { empId: null });
       }
     }
 
-    // Update the employee record itself
-    const updatedEmployee = await Employee.findByIdAndUpdate(id, data, {
+    // Update employee
+    const updatedEmployee = await Employee.findByIdAndUpdate(id, cleanedData, {
       new: true,
       runValidators: true,
     });
 
-    // Assign employee to new partner(s)
-    const newPartnerIds = partnerKeys.map((key) => data[key]).filter(Boolean);
+    // Assign employee to new partners
+    const newPartnerIds = partnerKeys
+      .map((key) => cleanedData[key])
+      .filter(Boolean);
 
     for (const partnerId of newPartnerIds) {
       await Partner.findByIdAndUpdate(partnerId, {
@@ -64,6 +78,20 @@ export class EmployeeService {
   }
 
   static async deleteEmployee(id) {
+    const employee = await Employee.findById(id);
+    if (!employee) return null;
+
+    const partnerKeys = [
+      "servicePartnerId",
+      "directPartnerId",
+      "retailPartnerId",
+    ];
+
+    for (const key of partnerKeys) {
+      if (employee[key]) {
+        await Partner.findByIdAndUpdate(employee[key], { empId: null });
+      }
+    }
     return await Employee.findByIdAndDelete(id);
   }
 

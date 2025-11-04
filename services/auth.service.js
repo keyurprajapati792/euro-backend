@@ -135,10 +135,20 @@ export class AuthService {
       <div style="font-family: Arial, sans-serif; background:#f6f9fc; padding:20px;">
         <div style="max-width:480px; margin:auto; background:#ffffff; border-radius:10px; padding:20px; text-align:center;">
 
-          <div style="margin-bottom:15px;">
-            <img src="https://res.cloudinary.com/dsoz1zsww/image/upload/v1761857677/Euro-C2C_logo_Blue_2025_kjqclq.png" style="height:50px; margin-right:8px;" />
-            <img src="https://res.cloudinary.com/dsoz1zsww/image/upload/v1761857676/EFL_Final_Logo_Nov_2020_pc_friends_for_life-1_v9lrmx.png" style="height:50px; margin-left:8px;" />
-          </div>
+         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:15px;">
+  <tr>
+    <td align="center" style="padding-bottom:10px;">
+      <img src="https://res.cloudinary.com/dsoz1zsww/image/upload/v1761857677/Euro-C2C_logo_Blue_2025_kjqclq.png"
+        alt="Logo 1"
+        style="max-width:140px; width:48%; height:auto; display:inline-block; vertical-align:middle; margin-right:4px;" />
+      
+      <img src="https://res.cloudinary.com/dsoz1zsww/image/upload/v1761857676/EFL_Final_Logo_Nov_2020_pc_friends_for_life-1_v9lrmx.png"
+        alt="Logo 2"
+        style="max-width:140px; width:48%; height:auto; display:inline-block; vertical-align:middle; margin-left:4px;" />
+    </td>
+  </tr>
+</table>
+
 
           <h2 style="color:#1e90ff; margin-bottom:8px;">OTP Verification</h2>
 
