@@ -3,7 +3,6 @@ import Partner from "../models/partner.js";
 
 export class EmployeeService {
   static async createEmployee(data) {
-    // Clean partner IDs (convert empty string to null)
     const cleanedData = {
       ...data,
       servicePartnerId: data.servicePartnerId || null,
@@ -14,7 +13,6 @@ export class EmployeeService {
     const employee = new Employee(cleanedData);
     const savedEmployee = await employee.save();
 
-    // ✅ Assign partner & visit dates
     const partnerVisits = [
       { partnerId: cleanedData.servicePartnerId, date: data.serviceVisitDate },
       { partnerId: cleanedData.directPartnerId, date: data.directVisitDate },
@@ -22,15 +20,24 @@ export class EmployeeService {
     ].filter((p) => p.partnerId && p.date);
 
     for (const pv of partnerVisits) {
-      await Partner.findByIdAndUpdate(pv.partnerId, {
-        empId: savedEmployee._id,
-        $push: {
-          employeeVisits: {
-            employeeId: savedEmployee._id,
-            visitDate: pv.date,
-          },
-        },
-      });
+      const partner = await Partner.findById(pv.partnerId);
+
+      if (!partner) continue;
+
+      // ✅ Check duplicate (same emp + same date)
+      const exists = partner.employeeVisits.some(
+        (ev) =>
+          ev.employeeId.toString() === savedEmployee._id.toString() &&
+          ev.visitDate === pv.date
+      );
+
+      if (!exists) {
+        partner.employeeVisits.push({
+          employeeId: savedEmployee._id,
+          visitDate: pv.date,
+        });
+        await partner.save();
+      }
     }
 
     return savedEmployee;
@@ -53,7 +60,7 @@ export class EmployeeService {
       "retailPartnerId",
     ];
 
-    // ✅ Remove old visit entries if partner changed
+    // ✅ Remove from old partners if changed
     for (const key of partnerKeys) {
       if (
         existingEmployee[key] &&
@@ -66,13 +73,11 @@ export class EmployeeService {
       }
     }
 
-    // ✅ Update employee
     const updatedEmployee = await Employee.findByIdAndUpdate(id, cleanedData, {
       new: true,
       runValidators: true,
     });
 
-    // ✅ Add new partner visit entries
     const partnerVisits = [
       { partnerId: cleanedData.servicePartnerId, date: data.serviceVisitDate },
       { partnerId: cleanedData.directPartnerId, date: data.directVisitDate },
@@ -80,15 +85,24 @@ export class EmployeeService {
     ].filter((p) => p.partnerId && p.date);
 
     for (const pv of partnerVisits) {
-      await Partner.findByIdAndUpdate(pv.partnerId, {
-        empId: updatedEmployee._id,
-        $push: {
-          employeeVisits: {
-            employeeId: updatedEmployee._id,
-            visitDate: pv.date,
-          },
-        },
-      });
+      const partner = await Partner.findById(pv.partnerId);
+
+      if (!partner) continue;
+
+      // ✅ Avoid duplicate log
+      const exists = partner.employeeVisits.some(
+        (ev) =>
+          ev.employeeId.toString() === updatedEmployee._id.toString() &&
+          ev.visitDate === pv.date
+      );
+
+      if (!exists) {
+        partner.employeeVisits.push({
+          employeeId: updatedEmployee._id,
+          visitDate: pv.date,
+        });
+        await partner.save();
+      }
     }
 
     return updatedEmployee;
@@ -140,7 +154,7 @@ export class EmployeeService {
       {
         $lookup: {
           from: "partners",
-          let: { empId: "$_id" }, // employee _id
+          let: { empId: "$_id" },
           pipeline: [
             { $unwind: "$employeeVisits" },
             {
