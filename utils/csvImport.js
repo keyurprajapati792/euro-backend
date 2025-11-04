@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import Employee from "../models/employee.js";
 import Partner from "../models/partner.js";
 
+const BATCH_SIZE = 50;
+
 /**
  * ✅ Helper: Add or Update Partner by contactPerson
  */
@@ -63,18 +65,33 @@ async function addOrUpdatePartner({
  * ✅ CSV Import Function
  */
 export const importCSVData = async (filePath) => {
-  try {
-    const rows = [];
+  return new Promise((resolve, reject) => {
+    let buffer = [];
 
-    await new Promise((resolve, reject) => {
-      fs.createReadStream(filePath)
-        .pipe(csv())
-        .on("data", (data) => rows.push(data))
-        .on("end", resolve)
-        .on("error", reject);
-    });
+    fs.createReadStream(filePath)
+      .pipe(csv())
+      .on("data", (row) => {
+        buffer.push(row);
 
-    for (const row of rows) {
+        if (buffer.length >= BATCH_SIZE) {
+          processChunk(buffer);
+          buffer = [];
+        }
+      })
+      .on("end", async () => {
+        if (buffer.length > 0) {
+          await processChunk(buffer);
+        }
+        console.log("✅ CSV Import Completed");
+        resolve();
+      })
+      .on("error", reject);
+  });
+};
+
+async function processChunk(rows) {
+  for (const row of rows) {
+    try {
       const empCode = row["Employee Code"]?.trim();
       if (!empCode) continue;
 
@@ -86,7 +103,7 @@ export const importCSVData = async (filePath) => {
       const contact = row["Employee Ph No"]?.trim() || "";
       const city = row["City"]?.trim();
 
-      // ✅ Find/Create employee
+      // ✅ find or create employee
       let employee = await Employee.findOne({ empId: empCode });
       if (!employee) {
         employee = await Employee.create({
@@ -100,12 +117,12 @@ export const importCSVData = async (filePath) => {
 
       const employeeId = employee._id;
 
-      // Visit Dates
+      // Visit dates
       const serviceVisitDate = row["Service Partner Visit Date"]?.trim() || "";
       const directVisitDate = row["Direct Partner Visit Date"]?.trim() || "";
       const retailVisitDate = row["Retail Partner Visit Date"]?.trim() || "";
 
-      // ✅ Service Partner
+      // ✅ Service partner
       if (row["Service POC"]) {
         const partner = await addOrUpdatePartner({
           partner_type: "Service Partner",
@@ -124,7 +141,7 @@ export const importCSVData = async (filePath) => {
         }
       }
 
-      // ✅ Direct Partner
+      // ✅ Direct partner
       if (row["Direct POC"]) {
         const partner = await addOrUpdatePartner({
           partner_type: "Direct Sales Partner",
@@ -143,7 +160,7 @@ export const importCSVData = async (filePath) => {
         }
       }
 
-      // ✅ Retail Partner
+      // ✅ Retail partner
       if (row["Retail POC"]) {
         const partner = await addOrUpdatePartner({
           partner_type: "Retail Sales Partner",
@@ -160,11 +177,8 @@ export const importCSVData = async (filePath) => {
           await employee.save();
         }
       }
+    } catch (err) {
+      console.error("Error in row:", err);
     }
-
-    console.log("✅ CSV import finished — partners linked to employees.");
-  } catch (error) {
-    console.error("❌ CSV Import Error:", error);
-    throw error;
   }
-};
+}
