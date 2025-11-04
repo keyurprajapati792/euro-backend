@@ -5,7 +5,7 @@ import Employee from "../models/employee.js";
 import Partner from "../models/partner.js";
 
 /**
- * Helper: Add or Update Partner by contactPerson
+ * ✅ Helper: Add or Update Partner by contactPerson
  */
 async function addOrUpdatePartner({
   partner_type,
@@ -60,7 +60,7 @@ async function addOrUpdatePartner({
 }
 
 /**
- * CSV Import Function
+ * ✅ CSV Import Function
  */
 export const importCSVData = async (filePath) => {
   try {
@@ -86,7 +86,7 @@ export const importCSVData = async (filePath) => {
       const contact = row["Employee Ph No"]?.trim() || "";
       const city = row["City"]?.trim();
 
-      // Find/Create employee
+      // ✅ Find/Create employee
       let employee = await Employee.findOne({ empId: empCode });
       if (!employee) {
         employee = await Employee.create({
@@ -105,9 +105,9 @@ export const importCSVData = async (filePath) => {
       const directVisitDate = row["Direct Partner Visit Date"]?.trim() || "";
       const retailVisitDate = row["Retail Partner Visit Date"]?.trim() || "";
 
-      // Service Partner
+      // ✅ Service Partner
       if (row["Service POC"]) {
-        await addOrUpdatePartner({
+        const partner = await addOrUpdatePartner({
           partner_type: "Service Partner",
           name: row["Service Business Partner Name"]?.trim(),
           contactPerson: row["Service POC"]?.trim(),
@@ -117,11 +117,16 @@ export const importCSVData = async (filePath) => {
           employeeId,
           visitDate: serviceVisitDate,
         });
+
+        if (partner && !employee.servicePartnerId) {
+          employee.servicePartnerId = partner._id;
+          await employee.save();
+        }
       }
 
-      // Direct Partner
+      // ✅ Direct Partner
       if (row["Direct POC"]) {
-        await addOrUpdatePartner({
+        const partner = await addOrUpdatePartner({
           partner_type: "Direct Sales Partner",
           contactPerson: row["Direct POC"]?.trim(),
           phone: row["Direct POC Number"]?.trim(),
@@ -131,11 +136,16 @@ export const importCSVData = async (filePath) => {
           employeeId,
           visitDate: directVisitDate,
         });
+
+        if (partner && !employee.directPartnerId) {
+          employee.directPartnerId = partner._id;
+          await employee.save();
+        }
       }
 
-      // Retail Partner
+      // ✅ Retail Partner
       if (row["Retail POC"]) {
-        await addOrUpdatePartner({
+        const partner = await addOrUpdatePartner({
           partner_type: "Retail Sales Partner",
           contactPerson: row["Retail POC"]?.trim(),
           phone: row["Retail POC Number"]?.trim(),
@@ -144,12 +154,17 @@ export const importCSVData = async (filePath) => {
           employeeId,
           visitDate: retailVisitDate,
         });
+
+        if (partner && !employee.retailPartnerId) {
+          employee.retailPartnerId = partner._id;
+          await employee.save();
+        }
       }
     }
 
-    console.log("CSV import finished — partners linked to employees.");
+    console.log("✅ CSV import finished — partners linked to employees.");
   } catch (error) {
-    console.error("CSV Import Error:", error);
+    console.error("❌ CSV Import Error:", error);
     throw error;
   }
 };
