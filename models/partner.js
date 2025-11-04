@@ -16,7 +16,7 @@ const partnerSchema = new mongoose.Schema(
       type: String,
       enum: ["CRC", "Partner", "GT", "MT", "AF", ""],
     },
-
+    visit_date: { type: String },
     empId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",

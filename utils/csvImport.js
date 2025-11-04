@@ -14,7 +14,6 @@ export const importCSVData = async (filePath) => {
   try {
     const rows = [];
 
-    // Step 1: Read CSV file
     await new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
         .pipe(csv())
@@ -35,7 +34,7 @@ export const importCSVData = async (filePath) => {
       const contact = row["Employee Ph No"]?.trim() || "";
       const city = row["City"]?.trim();
 
-      //Create/Find Employee
+      // find/create employee
       let employee = await Employee.findOne({ empId: empCode });
 
       if (!employee) {
@@ -51,7 +50,12 @@ export const importCSVData = async (filePath) => {
       const empId = employee._id;
       const updateData = {};
 
-      //Create Service Partner (if exists)
+      // ✅ Get Visit Dates as string
+      const serviceVisitDate = row["Service Partner Visit Data"]?.trim() || "";
+      const directVisitDate = row["Direct Partner Visit Data"]?.trim() || "";
+      const retailVisitDate = row["Retail Partner Visit Data"]?.trim() || "";
+
+      // ✅ Service Partner
       if (row["Service Business Partner Name"]) {
         const servicePartner = await Partner.create({
           name: row["Service Business Partner Name"].trim(),
@@ -61,11 +65,12 @@ export const importCSVData = async (filePath) => {
           partner_type: "Service Partner",
           city,
           empId,
+          visit_date: serviceVisitDate,
         });
         updateData.servicePartnerId = servicePartner._id;
       }
 
-      //Create Direct Partner (if exists)
+      // ✅ Direct Partner
       if (row["Direct Sub Channel (CRC/Partner)"]) {
         const directPartner = await Partner.create({
           contactPerson: row["Direct POC"]?.trim(),
@@ -75,11 +80,12 @@ export const importCSVData = async (filePath) => {
           sub_type: row["Direct Sub Channel (CRC/Partner)"]?.trim(),
           city,
           empId,
+          visit_date: directVisitDate,
         });
         updateData.directPartnerId = directPartner._id;
       }
 
-      //Create Retail Partner (if exists)
+      // ✅ Retail Partner
       if (row["Retail Sub Channel (GT/MT/AF)"]) {
         const retailPartner = await Partner.create({
           contactPerson: row["Retail POC"]?.trim(),
@@ -88,21 +94,19 @@ export const importCSVData = async (filePath) => {
           sub_type: row["Retail Sub Channel (GT/MT/AF)"]?.trim(),
           city,
           empId,
+          visit_date: retailVisitDate,
         });
         updateData.retailPartnerId = retailPartner._id;
       }
 
-      //Update Employee with partner IDs
       if (Object.keys(updateData).length > 0) {
         await Employee.findByIdAndUpdate(empId, updateData);
       }
     }
 
-    console.log(
-      "CSV import completed: Employees + Partners created successfully!"
-    );
+    console.log("✅ CSV import completed — Visit Dates stored as string!");
   } catch (error) {
-    console.error("Error during CSV import:", error);
+    console.error("❌ Error during CSV import:", error);
     throw error;
   }
 };
