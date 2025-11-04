@@ -140,7 +140,7 @@ export class EmployeeService {
       {
         $lookup: {
           from: "partners",
-          let: { empId: "$_id" },
+          let: { empId: "$_id" }, // employee _id
           pipeline: [
             { $unwind: "$employeeVisits" },
             {
@@ -151,9 +151,9 @@ export class EmployeeService {
             {
               $project: {
                 partnerId: "$_id",
-                partner_type: 1,
                 partnerName: "$name",
-                contactPerson: 1,
+                contactPerson: "$contactPerson",
+                partner_type: 1,
                 visitDate: "$employeeVisits.visitDate",
                 _id: 0,
               },
