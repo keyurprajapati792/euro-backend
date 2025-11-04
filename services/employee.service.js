@@ -3,7 +3,7 @@ import Partner from "../models/partner.js";
 
 export class EmployeeService {
   static async createEmployee(data) {
-    // Convert empty strings to null
+    // Clean partner IDs (convert empty string to null)
     const cleanedData = {
       ...data,
       servicePartnerId: data.servicePartnerId || null,
@@ -14,15 +14,22 @@ export class EmployeeService {
     const employee = new Employee(cleanedData);
     const savedEmployee = await employee.save();
 
-    const partnerIds = [
-      cleanedData.servicePartnerId,
-      cleanedData.directPartnerId,
-      cleanedData.retailPartnerId,
-    ].filter(Boolean);
+    // ✅ Assign partner & visit dates
+    const partnerVisits = [
+      { partnerId: cleanedData.servicePartnerId, date: data.serviceVisitDate },
+      { partnerId: cleanedData.directPartnerId, date: data.directVisitDate },
+      { partnerId: cleanedData.retailPartnerId, date: data.retailVisitDate },
+    ].filter((p) => p.partnerId && p.date);
 
-    for (const partnerId of partnerIds) {
-      await Partner.findByIdAndUpdate(partnerId, {
+    for (const pv of partnerVisits) {
+      await Partner.findByIdAndUpdate(pv.partnerId, {
         empId: savedEmployee._id,
+        $push: {
+          employeeVisits: {
+            employeeId: savedEmployee._id,
+            visitDate: pv.date,
+          },
+        },
       });
     }
 
@@ -33,7 +40,6 @@ export class EmployeeService {
     const existingEmployee = await Employee.findById(id);
     if (!existingEmployee) return null;
 
-    // Convert empty strings to null
     const cleanedData = {
       ...data,
       servicePartnerId: data.servicePartnerId || null,
@@ -47,30 +53,41 @@ export class EmployeeService {
       "retailPartnerId",
     ];
 
-    // Remove empId from old partners when employee moved
+    // ✅ Remove old visit entries if partner changed
     for (const key of partnerKeys) {
       if (
         existingEmployee[key] &&
-        cleanedData[key] !== existingEmployee[key].toString()
+        cleanedData[key] !== existingEmployee[key]?.toString()
       ) {
-        await Partner.findByIdAndUpdate(existingEmployee[key], { empId: null });
+        await Partner.findByIdAndUpdate(existingEmployee[key], {
+          $pull: { employeeVisits: { employeeId: id } },
+          empId: null,
+        });
       }
     }
 
-    // Update employee
+    // ✅ Update employee
     const updatedEmployee = await Employee.findByIdAndUpdate(id, cleanedData, {
       new: true,
       runValidators: true,
     });
 
-    // Assign employee to new partners
-    const newPartnerIds = partnerKeys
-      .map((key) => cleanedData[key])
-      .filter(Boolean);
+    // ✅ Add new partner visit entries
+    const partnerVisits = [
+      { partnerId: cleanedData.servicePartnerId, date: data.serviceVisitDate },
+      { partnerId: cleanedData.directPartnerId, date: data.directVisitDate },
+      { partnerId: cleanedData.retailPartnerId, date: data.retailVisitDate },
+    ].filter((p) => p.partnerId && p.date);
 
-    for (const partnerId of newPartnerIds) {
-      await Partner.findByIdAndUpdate(partnerId, {
+    for (const pv of partnerVisits) {
+      await Partner.findByIdAndUpdate(pv.partnerId, {
         empId: updatedEmployee._id,
+        $push: {
+          employeeVisits: {
+            employeeId: updatedEmployee._id,
+            visitDate: pv.date,
+          },
+        },
       });
     }
 
@@ -89,35 +106,19 @@ export class EmployeeService {
 
     for (const key of partnerKeys) {
       if (employee[key]) {
-        await Partner.findByIdAndUpdate(employee[key], { empId: null });
+        await Partner.findByIdAndUpdate(employee[key], {
+          empId: null,
+          $pull: { employeeVisits: { employeeId: id } },
+        });
       }
     }
+
     return await Employee.findByIdAndDelete(id);
   }
-
-  // static async deleteEmployee(id) {
-  //   const employee = await Employee.findById(id);
-  //   if (!employee) return null;
-
-  //   const partnerIds = [
-  //     employee.servicePartnerId,
-  //     employee.directPartnerId,
-  //     employee.retailPartnerId,
-  //   ].filter(Boolean);
-
-  //   for (const partnerId of partnerIds) {
-  //     await Partner.findByIdAndUpdate(partnerId, {
-  //       $pull: { employees: id },
-  //     });
-  //   }
-
-  //   return await Employee.findByIdAndDelete(id);
-  // }
 
   static async getEmployees(search = "", page = 1, limit = 10) {
     const skip = (page - 1) * limit;
 
-    // 🔍 Build search condition
     const searchCondition = search
       ? {
           $or: [

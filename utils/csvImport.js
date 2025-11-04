@@ -1,14 +1,66 @@
 import fs from "fs";
 import csv from "csv-parser";
+import mongoose from "mongoose";
 import Employee from "../models/employee.js";
 import Partner from "../models/partner.js";
 
 /**
- * CSV Import Logic (Row-by-Row)
- * For each row:
- *   1. Create or update Employee (with hashed password)
- *   2. Create 0–3 Partner records
- *   3. Update Employee with partner IDs
+ * Helper: Add or Update Partner by contactPerson
+ */
+async function addOrUpdatePartner({
+  partner_type,
+  contactPerson,
+  phone,
+  name,
+  city,
+  address,
+  sub_type,
+  employeeId,
+  visitDate,
+}) {
+  if (!contactPerson) return;
+
+  // Find partner by contact person
+  let partner = await Partner.findOne({ contactPerson: contactPerson.trim() });
+
+  // If not exists, create new partner
+  if (!partner) {
+    partner = new Partner({
+      partner_type,
+      contactPerson,
+      phone,
+      name,
+      city,
+      address,
+      sub_type,
+      employeeVisits: [],
+    });
+  } else {
+    // Update name/phone/address if missing
+    if (name && !partner.name) partner.name = name;
+    if (phone && !partner.phone) partner.phone = phone;
+    if (address && !partner.address) partner.address = address;
+    if (city && !partner.city) partner.city = city;
+    if (sub_type && !partner.sub_type) partner.sub_type = sub_type;
+  }
+
+  // Avoid duplicate employee visit entry
+  const exists = partner.employeeVisits.find(
+    (v) =>
+      v.employeeId.toString() === employeeId.toString() &&
+      v.visitDate === visitDate
+  );
+
+  if (!exists) {
+    partner.employeeVisits.push({ employeeId, visitDate });
+  }
+
+  await partner.save();
+  return partner;
+}
+
+/**
+ * CSV Import Function
  */
 export const importCSVData = async (filePath) => {
   try {
@@ -28,15 +80,14 @@ export const importCSVData = async (filePath) => {
 
       const fullName = row["Employee Name"]?.trim() || "";
       const [firstname, ...lastnameParts] = fullName.split(" ");
-      const lastname = lastnameParts.join(" ") || "";
+      const lastname = lastnameParts.join(" ");
 
       const email = row["Employee email ID"]?.trim() || "";
       const contact = row["Employee Ph No"]?.trim() || "";
       const city = row["City"]?.trim();
 
-      // find/create employee
+      // Find/Create employee
       let employee = await Employee.findOne({ empId: empCode });
-
       if (!employee) {
         employee = await Employee.create({
           empId: empCode,
@@ -47,66 +98,58 @@ export const importCSVData = async (filePath) => {
         });
       }
 
-      const empId = employee._id;
-      const updateData = {};
+      const employeeId = employee._id;
 
-      // ✅ Get Visit Dates as string
+      // Visit Dates
       const serviceVisitDate = row["Service Partner Visit Date"]?.trim() || "";
       const directVisitDate = row["Direct Partner Visit Date"]?.trim() || "";
       const retailVisitDate = row["Retail Partner Visit Date"]?.trim() || "";
 
-      // ✅ Service Partner
-      if (row["Service Business Partner Name"]) {
-        const servicePartner = await Partner.create({
-          name: row["Service Business Partner Name"].trim(),
+      // Service Partner
+      if (row["Service POC"]) {
+        await addOrUpdatePartner({
+          partner_type: "Service Partner",
+          name: row["Service Business Partner Name"]?.trim(),
           contactPerson: row["Service POC"]?.trim(),
           phone: row["Service POC Number"]?.trim(),
           address: row["Service Business Partner Address"]?.trim(),
-          partner_type: "Service Partner",
           city,
-          empId,
-          visit_date: serviceVisitDate,
+          employeeId,
+          visitDate: serviceVisitDate,
         });
-        updateData.servicePartnerId = servicePartner._id;
       }
 
-      // ✅ Direct Partner
-      if (row["Direct Sub Channel (CRC/Partner)"]) {
-        const directPartner = await Partner.create({
+      // Direct Partner
+      if (row["Direct POC"]) {
+        await addOrUpdatePartner({
+          partner_type: "Direct Sales Partner",
           contactPerson: row["Direct POC"]?.trim(),
           phone: row["Direct POC Number"]?.trim(),
           address: row["CRC/Partner Address"]?.trim(),
-          partner_type: "Direct Sales Partner",
           sub_type: row["Direct Sub Channel (CRC/Partner)"]?.trim(),
           city,
-          empId,
-          visit_date: directVisitDate,
+          employeeId,
+          visitDate: directVisitDate,
         });
-        updateData.directPartnerId = directPartner._id;
       }
 
-      // ✅ Retail Partner
-      if (row["Retail Sub Channel (GT/MT/AF)"]) {
-        const retailPartner = await Partner.create({
+      // Retail Partner
+      if (row["Retail POC"]) {
+        await addOrUpdatePartner({
+          partner_type: "Retail Sales Partner",
           contactPerson: row["Retail POC"]?.trim(),
           phone: row["Retail POC Number"]?.trim(),
-          partner_type: "Retail Sales Partner",
           sub_type: row["Retail Sub Channel (GT/MT/AF)"]?.trim(),
           city,
-          empId,
-          visit_date: retailVisitDate,
+          employeeId,
+          visitDate: retailVisitDate,
         });
-        updateData.retailPartnerId = retailPartner._id;
-      }
-
-      if (Object.keys(updateData).length > 0) {
-        await Employee.findByIdAndUpdate(empId, updateData);
       }
     }
 
-    console.log("✅ CSV import completed — Visit Dates stored as string!");
+    console.log("CSV import finished — partners linked to employees.");
   } catch (error) {
-    console.error("❌ Error during CSV import:", error);
+    console.error("CSV Import Error:", error);
     throw error;
   }
 };

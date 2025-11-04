@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const partnerSchema = new mongoose.Schema(
   {
-    name: { type: String }, // Partner or store name
-    contactPerson: { type: String, required: true }, // The individual’s name
+    name: { type: String },
+    contactPerson: { type: String, required: true },
     phone: { type: String },
     address: { type: String },
     city: { type: String },
@@ -16,12 +16,20 @@ const partnerSchema = new mongoose.Schema(
       type: String,
       enum: ["CRC", "Partner", "GT", "MT", "AF", ""],
     },
-    visit_date: { type: String },
-    empId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Employee",
-      default: null,
-    },
+
+    employeeVisits: [
+      {
+        employeeId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Employee",
+          required: true,
+        },
+        visitDate: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );
