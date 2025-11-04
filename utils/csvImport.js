@@ -51,9 +51,9 @@ export const importCSVData = async (filePath) => {
       const updateData = {};
 
       // ✅ Get Visit Dates as string
-      const serviceVisitDate = row["Service Partner Visit Data"]?.trim() || "";
-      const directVisitDate = row["Direct Partner Visit Data"]?.trim() || "";
-      const retailVisitDate = row["Retail Partner Visit Data"]?.trim() || "";
+      const serviceVisitDate = row["Service Partner Visit Date"]?.trim() || "";
+      const directVisitDate = row["Direct Partner Visit Date"]?.trim() || "";
+      const retailVisitDate = row["Retail Partner Visit Date"]?.trim() || "";
 
       // ✅ Service Partner
       if (row["Service Business Partner Name"]) {
