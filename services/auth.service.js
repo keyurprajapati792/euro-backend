@@ -153,12 +153,10 @@ export class AuthService {
           <h2 style="color:#1e90ff; margin-bottom:8px;">OTP Verification</h2>
 
           <p style="font-size:16px; color:#333; text-align:left;">
-            Hello <b>${employee.name || employee.fullName || ""}</b>,
+            Hello <b>${employee.firstname} ${employee.lastname}</b>,
           </p>
 
-          <p style="font-size:16px; color:#333; text-align:left;">
-  Hello <b>${employee.name || employee.fullName || ""}</b>,
-</p>
+          
 
 <p style="font-size:15px; color:#555; text-align:left;">
   Your One-Time Password (OTP) for login is:
