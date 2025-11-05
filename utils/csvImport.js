@@ -21,38 +21,27 @@ async function addOrUpdatePartner({
   employeeId,
   visitDate,
 }) {
-  if (!contactPerson) return; // name not required for Direct/Retail
+  if (!contactPerson && partner_type !== "Service Partner") return;
 
-  let key;
   let partner;
 
   if (partner_type === "Service Partner") {
-    key = `${partner_type}_${contactPerson}_${name}_${address || ""}`.trim();
-    partner = partnerCache.get(key);
-
-    if (!partner) {
-      partner = await Partner.findOne({
-        partner_type,
-        contactPerson: contactPerson.trim(),
-        name: name?.trim(),
-        address: address?.trim(),
-      });
-    }
+    // Check existing partner by name + address
+    partner = await Partner.findOne({
+      partner_type: "Service Partner",
+      name: name?.trim(),
+      address: address?.trim(),
+    });
   } else {
-    // Direct / Retail Partner: uniqueness by contactPerson + phone
-    key = `${partner_type}_${contactPerson}_${phone || ""}`.trim();
-    partner = partnerCache.get(key);
-
-    if (!partner) {
-      partner = await Partner.findOne({
-        partner_type,
-        contactPerson: contactPerson.trim(),
-        phone: phone?.trim() || null,
-      });
-    }
+    // Direct / Retail Partner: check by contactPerson + phone
+    partner = await Partner.findOne({
+      partner_type,
+      contactPerson: contactPerson?.trim(),
+      phone: phone?.trim(),
+    });
   }
 
-  // Create new if not exists
+  // Create new partner if not exists
   if (!partner) {
     partner = new Partner({
       partner_type,
@@ -74,19 +63,17 @@ async function addOrUpdatePartner({
   }
 
   // Avoid duplicate visits
-  const exists = partner.employeeVisits.some(
+  const visitExists = partner.employeeVisits.some(
     (v) =>
       v.employeeId.toString() === employeeId.toString() &&
       v.visitDate === visitDate
   );
 
-  if (!exists && visitDate) {
+  if (!visitExists && visitDate) {
     partner.employeeVisits.push({ employeeId, visitDate });
   }
 
   await partner.save();
-  partnerCache.set(key, partner);
-
   return partner;
 }
 

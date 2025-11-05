@@ -32,26 +32,4 @@ const partnerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Service Partner uniqueness
-partnerSchema.index(
-  { partner_type: 1, contactPerson: 1, name: 1, address: 1 },
-  {
-    unique: true,
-    sparse: true,
-    partialFilterExpression: { partner_type: "Service Partner" },
-  }
-);
-
-// Direct/Retail Partner uniqueness (contact + phone)
-partnerSchema.index(
-  { partner_type: 1, contactPerson: 1, phone: 1 },
-  {
-    unique: true,
-    sparse: true,
-    partialFilterExpression: {
-      partner_type: { $in: ["Direct Sales Partner", "Retail Sales Partner"] },
-    },
-  }
-);
-
 export default mongoose.model("Partner", partnerSchema);
