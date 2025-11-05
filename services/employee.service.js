@@ -1,18 +1,5 @@
-import mongoose from "mongoose";
 import Employee from "../models/employee.js";
 import Partner from "../models/partner.js";
-
-function formatToDMY(date) {
-  if (!date) return null;
-
-  const d = new Date(date);
-  if (isNaN(d)) return null;
-
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  return `${day}/${month}/${year}`;
-}
 
 export class EmployeeService {
   static async createEmployee(data) {
@@ -34,20 +21,20 @@ export class EmployeeService {
 
     for (const pv of partnerVisits) {
       const partner = await Partner.findById(pv.partnerId);
+
       if (!partner) continue;
 
-      const formattedDate = formatToDMY(pv.date);
-
-      const exists = partner.employeeVisits?.some(
+      // ✅ Check duplicate (same emp + same date)
+      const exists = partner.employeeVisits.some(
         (ev) =>
-          ev?.employeeId?.toString() === savedEmployee._id.toString() &&
-          ev?.visitDate === formattedDate
+          ev.employeeId.toString() === savedEmployee._id.toString() &&
+          ev.visitDate === pv.date
       );
 
       if (!exists) {
         partner.employeeVisits.push({
           employeeId: savedEmployee._id,
-          visitDate: formattedDate,
+          visitDate: pv.date,
         });
         await partner.save();
       }
@@ -73,7 +60,7 @@ export class EmployeeService {
       "retailPartnerId",
     ];
 
-    // Remove old visits
+    // ✅ Remove from old partners if changed
     for (const key of partnerKeys) {
       if (
         existingEmployee[key] &&
@@ -81,6 +68,7 @@ export class EmployeeService {
       ) {
         await Partner.findByIdAndUpdate(existingEmployee[key], {
           $pull: { employeeVisits: { employeeId: id } },
+          empId: null,
         });
       }
     }
@@ -98,20 +86,20 @@ export class EmployeeService {
 
     for (const pv of partnerVisits) {
       const partner = await Partner.findById(pv.partnerId);
+
       if (!partner) continue;
 
-      const formattedDate = formatToDMY(pv.date);
-
-      const exists = partner.employeeVisits?.some(
+      // ✅ Avoid duplicate log
+      const exists = partner.employeeVisits.some(
         (ev) =>
-          ev?.employeeId?.toString() === updatedEmployee._id.toString() &&
-          ev?.visitDate === formattedDate
+          ev.employeeId.toString() === updatedEmployee._id.toString() &&
+          ev.visitDate === pv.date
       );
 
       if (!exists) {
         partner.employeeVisits.push({
           employeeId: updatedEmployee._id,
-          visitDate: formattedDate,
+          visitDate: pv.date,
         });
         await partner.save();
       }
@@ -133,6 +121,7 @@ export class EmployeeService {
     for (const key of partnerKeys) {
       if (employee[key]) {
         await Partner.findByIdAndUpdate(employee[key], {
+          empId: null,
           $pull: { employeeVisits: { employeeId: id } },
         });
       }
@@ -161,6 +150,7 @@ export class EmployeeService {
       { $sort: { createdAt: -1 } },
       { $skip: skip },
       { $limit: limit },
+
       {
         $lookup: {
           from: "partners",
@@ -189,17 +179,15 @@ export class EmployeeService {
     ]);
 
     const total = await Employee.countDocuments(searchCondition);
-    return {
-      employees,
-      total,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-    };
+    const totalPages = Math.ceil(total / limit);
+
+    return { employees, total, totalPages, currentPage: page };
   }
 
   static async getEmployeeById(id) {
     const results = await Employee.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(id) } },
+
       {
         $lookup: {
           from: "partners",
