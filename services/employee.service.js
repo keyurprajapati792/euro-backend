@@ -86,23 +86,24 @@ export class EmployeeService {
 
     for (const pv of partnerVisits) {
       const partner = await Partner.findById(pv.partnerId);
-
       if (!partner) continue;
 
-      // ✅ Avoid duplicate log
-      const exists = partner.employeeVisits.some(
-        (ev) =>
-          ev.employeeId.toString() === updatedEmployee._id.toString() &&
-          ev.visitDate === pv.date
+      const existingVisit = partner.employeeVisits.find(
+        (ev) => ev.employeeId.toString() === updatedEmployee._id.toString()
       );
 
-      if (!exists) {
+      if (existingVisit) {
+        // ✅ Update existing visit date
+        existingVisit.visitDate = pv.date;
+      } else {
+        // ✅ Add a new visit entry
         partner.employeeVisits.push({
           employeeId: updatedEmployee._id,
           visitDate: pv.date,
         });
-        await partner.save();
       }
+
+      await partner.save();
     }
 
     return updatedEmployee;
