@@ -21,30 +21,38 @@ async function addOrUpdatePartner({
   employeeId,
   visitDate,
 }) {
-  if (!contactPerson) return;
+  if (!contactPerson) return; // name not required for Direct/Retail
 
-  // Create a cache / search key
   let key;
-  let query = { partner_type, contactPerson: contactPerson.trim() };
+  let partner;
 
   if (partner_type === "Service Partner") {
     key = `${partner_type}_${contactPerson}_${name}_${address || ""}`.trim();
-    query.name = name?.trim() || null;
-    query.address = address?.trim() || null;
+    partner = partnerCache.get(key);
+
+    if (!partner) {
+      partner = await Partner.findOne({
+        partner_type,
+        contactPerson: contactPerson.trim(),
+        name: name?.trim(),
+        address: address?.trim(),
+      });
+    }
   } else {
-    key = `${partner_type}_${contactPerson}_${address || ""}`.trim();
-    query.address = address?.trim() || null;
+    // Direct / Retail Partner: uniqueness by contactPerson + phone
+    key = `${partner_type}_${contactPerson}_${phone || ""}`.trim();
+    partner = partnerCache.get(key);
+
+    if (!partner) {
+      partner = await Partner.findOne({
+        partner_type,
+        contactPerson: contactPerson.trim(),
+        phone: phone?.trim() || null,
+      });
+    }
   }
 
-  // Check cache first
-  let partner = partnerCache.get(key);
-
-  // DB fetch if not in cache
-  if (!partner) {
-    partner = await Partner.findOne(query);
-  }
-
-  // If still no partner -> create new
+  // Create new if not exists
   if (!partner) {
     partner = new Partner({
       partner_type,
@@ -57,11 +65,12 @@ async function addOrUpdatePartner({
       employeeVisits: [],
     });
   } else {
-    // ✅ Update blank fields only
+    // Update only blank fields
     if (name && !partner.name) partner.name = name;
     if (phone && !partner.phone) partner.phone = phone;
     if (city && !partner.city) partner.city = city;
     if (sub_type && !partner.sub_type) partner.sub_type = sub_type;
+    if (address && !partner.address) partner.address = address;
   }
 
   // Avoid duplicate visits
@@ -183,6 +192,11 @@ export const importCSVData = async (filePath) => {
       })
       .on("end", () => {
         console.log("✅ CSV Import Completed without chunk");
+
+        // ✅ Clear caches after import
+        employeeCache.clear();
+        partnerCache.clear();
+
         resolve();
       })
       .on("error", reject);
