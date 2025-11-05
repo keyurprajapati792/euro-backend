@@ -36,7 +36,7 @@ const partnerSchema = new mongoose.Schema(
 );
 
 partnerSchema.index(
-  { contactPerson: 1, phone: 1 },
+  { partner_type: 1, contactPerson: 1, address: 1 },
   { unique: true, sparse: true }
 );
 

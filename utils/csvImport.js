@@ -23,18 +23,28 @@ async function addOrUpdatePartner({
 }) {
   if (!contactPerson) return;
 
-  const key = `${partner_type}_${contactPerson}`.trim();
+  // Create a cache / search key
+  let key;
+  let query = { partner_type, contactPerson: contactPerson.trim() };
+
+  if (partner_type === "Service Partner") {
+    key = `${partner_type}_${contactPerson}_${name}_${address || ""}`.trim();
+    query.name = name?.trim() || null;
+    query.address = address?.trim() || null;
+  } else {
+    key = `${partner_type}_${contactPerson}_${address || ""}`.trim();
+    query.address = address?.trim() || null;
+  }
+
+  // Check cache first
   let partner = partnerCache.get(key);
 
   // DB fetch if not in cache
   if (!partner) {
-    partner = await Partner.findOne({
-      partner_type,
-      contactPerson: contactPerson.trim(),
-    });
+    partner = await Partner.findOne(query);
   }
 
-  // If still no partner -> create
+  // If still no partner -> create new
   if (!partner) {
     partner = new Partner({
       partner_type,
@@ -50,7 +60,6 @@ async function addOrUpdatePartner({
     // ✅ Update blank fields only
     if (name && !partner.name) partner.name = name;
     if (phone && !partner.phone) partner.phone = phone;
-    if (address && !partner.address) partner.address = address;
     if (city && !partner.city) partner.city = city;
     if (sub_type && !partner.sub_type) partner.sub_type = sub_type;
   }
