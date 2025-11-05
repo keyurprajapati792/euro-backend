@@ -3,7 +3,11 @@ import Employee from "../models/employee.js";
 import Partner from "../models/partner.js";
 
 function formatToDMY(date) {
+  if (!date) return null;
+
   const d = new Date(date);
+  if (isNaN(d)) return null;
+
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const year = d.getFullYear();
@@ -34,12 +38,11 @@ export class EmployeeService {
 
       const formattedDate = formatToDMY(pv.date);
 
-      const exists = partner.employeeVisits.some((ev) => {
-        return (
-          ev.employeeId.toString() === savedEmployee._id.toString() &&
-          ev.visitDate === formattedDate
-        );
-      });
+      const exists = partner.employeeVisits?.some(
+        (ev) =>
+          ev?.employeeId?.toString() === savedEmployee._id.toString() &&
+          ev?.visitDate === formattedDate
+      );
 
       if (!exists) {
         partner.employeeVisits.push({
@@ -70,7 +73,7 @@ export class EmployeeService {
       "retailPartnerId",
     ];
 
-    // Remove old visits if partner is changed
+    // Remove old visits
     for (const key of partnerKeys) {
       if (
         existingEmployee[key] &&
@@ -99,12 +102,11 @@ export class EmployeeService {
 
       const formattedDate = formatToDMY(pv.date);
 
-      const exists = partner.employeeVisits.some((ev) => {
-        return (
-          ev.employeeId.toString() === updatedEmployee._id.toString() &&
-          ev.visitDate === formattedDate
-        );
-      });
+      const exists = partner.employeeVisits?.some(
+        (ev) =>
+          ev?.employeeId?.toString() === updatedEmployee._id.toString() &&
+          ev?.visitDate === formattedDate
+      );
 
       if (!exists) {
         partner.employeeVisits.push({
@@ -159,7 +161,6 @@ export class EmployeeService {
       { $sort: { createdAt: -1 } },
       { $skip: skip },
       { $limit: limit },
-
       {
         $lookup: {
           from: "partners",
@@ -188,15 +189,17 @@ export class EmployeeService {
     ]);
 
     const total = await Employee.countDocuments(searchCondition);
-    const totalPages = Math.ceil(total / limit);
-
-    return { employees, total, totalPages, currentPage: page };
+    return {
+      employees,
+      total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+    };
   }
 
   static async getEmployeeById(id) {
     const results = await Employee.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(id) } },
-
       {
         $lookup: {
           from: "partners",
