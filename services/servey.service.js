@@ -126,9 +126,12 @@ export class SurveyService {
 
     const formatted = [];
 
+    let serial = 1; // 🔹 Start serial numbering
+
     surveys.forEach((s) => {
       s.responses.forEach((r, index) => {
         formatted.push({
+          "Serial Number": index === 0 ? serial : "", // only on first row of each survey
           "Customer ID": index === 0 ? s.customerId ?? "N/A" : "",
           "Customer Name": index === 0 ? s.customerName ?? "N/A" : "",
           "Customer Phone": index === 0 ? s.customerContact ?? "N/A" : "",
@@ -144,7 +147,6 @@ export class SurveyService {
               : "",
           "Employee ID": index === 0 ? s.empId?.empId ?? "N/A" : "",
           "Employee Contact": index === 0 ? s.empId?.contact ?? "N/A" : "",
-
           "Partner Name": index === 0 ? s.partnerId?.name ?? "N/A" : "",
           "Partner Contact Person":
             index === 0 ? s.partnerId?.contactPerson ?? "N/A" : "",
@@ -166,7 +168,6 @@ export class SurveyService {
                   })
                 : "N/A"
               : "",
-
           "Submitted Time":
             index === 0
               ? s.submittedAt
@@ -178,7 +179,6 @@ export class SurveyService {
                   })
                 : "N/A"
               : "",
-
           Question: r.question ?? "N/A",
           Answer: Array.isArray(r.answer)
             ? r.answer.join(", ")
@@ -186,6 +186,8 @@ export class SurveyService {
           Remark: r.remark ?? "N/A",
         });
       });
+
+      serial++; // 🔹 Increment after each survey
     });
 
     const parser = new Parser({ header: true });
